@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌱 ピクミンガーデン 🌱</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Meiryo', 'Hiragino Sans', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse at top, #B3E5FC 0%, transparent 60%),
+    radial-gradient(ellipse at bottom, #A5D6A7 0%, transparent 60%),
+    linear-gradient(180deg, #87CEEB 0%, #B6E390 55%, #81C784 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding: 20px;
+  color: #333;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ================================================= */
+/* 背景レイヤー（ピクミンたちが遊び回る）              */
+/* ================================================= */
+.bg-layer {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* 雲 */
+.cloud {
+  position: absolute;
+  background: rgba(255,255,255,0.7);
+  border-radius: 50%;
+  box-shadow:
+    25px -10px 0 -5px rgba(255,255,255,0.7),
+    50px 0 0 -10px rgba(255,255,255,0.7),
+    -25px -5px 0 -8px rgba(255,255,255,0.7);
+  animation: cloud-float linear infinite;
+}
+
+@keyframes cloud-float {
+  0%   { transform: translateX(-150px); }
+  100% { transform: translateX(calc(100vw + 150px)); }
+}
+
+/* 草 */
+.grass-blade {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 25px;
+  background: linear-gradient(180deg, #66BB6A, #2E7D32);
+  border-radius: 50% 50% 0 0 / 80% 80% 0 0;
+  transform-origin: bottom center;
+  animation: grass-sway 3s ease-in-out infinite;
+}
+
+@keyframes grass-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(3deg); }
+}
+
+/* 花 */
+.flower {
+  position: absolute;
+  font-size: 20px;
+  animation: flower-sway 4s ease-in-out infinite;
+}
+
+@keyframes flower-sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50%      { transform: rotate(8deg); }
+}
+
+/* 背景で動くピクミン */
+.bg-pikmin {
+  position: absolute;
+  opacity: 0.55;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+  will-change: transform;
+}
+
+/* モバイルでは背景装飾を軽量化（影や重いエフェクトを削減） */
+@media (max-width: 768px) {
+  .bg-pikmin { filter: none; }
+  .cloud { box-shadow:
+    18px -6px 0 -5px rgba(255,255,255,0.7),
+    -18px -3px 0 -8px rgba(255,255,255,0.7); }
+}
+
+/* ユーザーがモーション軽減を希望する場合はアニメーションを停止 */
+@media (prefers-reduced-motion: reduce) {
+  .cloud, .grass-blade, .flower, .bg-pikmin {
+    animation: none !important;
+  }
+}
+
+@keyframes walk-1 {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(60px, -15px); }
+  50%  { transform: translate(120px, 0); }
+  75%  { transform: translate(60px, 15px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes walk-2 {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  49%  { transform: translate(-80px, -20px) scaleX(1); }
+  50%  { transform: translate(-80px, -20px) scaleX(-1); }
+  99%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+
+@keyframes walk-3 {
+  0%   { transform: translate(0, 0) rotate(0); }
+  33%  { transform: translate(40px, -30px) rotate(5deg); }
+  66%  { transform: translate(-30px, -40px) rotate(-5deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+@keyframes walk-4 {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(0, -40px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes walk-5 {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25%      { transform: translate(-50px, 20px) rotate(-8deg); }
+  50%      { transform: translate(-100px, 0) rotate(0); }
+  75%      { transform: translate(-50px, -20px) rotate(8deg); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-5deg); }
+  50%      { transform: rotate(5deg); }
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+header {
+  text-align: center;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #FFD54F 0%, #FF7043 50%, #EC407A 100%);
+  padding: 30px 20px;
+  border-radius: 25px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+}
+
+header h1 { font-size: 2.5em; margin-bottom: 8px; position: relative; }
+header p { font-size: 1.1em; position: relative; opacity: 0.95; }
+
+.progress-container, .stats, .garden, .achievements {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  backdrop-filter: blur(4px);
+}
+
+.section-title {
+  color: #2d6a3e;
+  margin-bottom: 15px;
+  font-size: 1.4em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  background: #E8EAED;
+  height: 32px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #FFD54F, #FF7043, #66BB6A);
+  height: 100%;
+  width: 0%;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.progress-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  padding: 15px 10px;
+  border-radius: 15px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  transition: transform 0.2s;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.stat-card:hover { transform: translateY(-4px) scale(1.03); }
+.stat-card .count { font-size: 2em; display: block; line-height: 1.1; }
+.stat-card .label { font-size: 0.85em; }
+
+/* ガーデン */
+.garden {
+  background: linear-gradient(180deg, rgba(165, 229, 130, 0.95) 0%, rgba(123, 201, 111, 0.95) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.garden .section-title {
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.garden-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-detail {
+  background: linear-gradient(135deg, #66BB6A, #43A047);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: all 0.2s;
+  font-size: 0.95em;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-detail:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+
+.pikmin-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 110px;
+  max-height: 260px;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  padding: 10px;
+}
+
+.pikmin-area::-webkit-scrollbar { width: 8px; }
+.pikmin-area::-webkit-scrollbar-track { background: rgba(255,255,255,0.3); border-radius: 4px; }
+.pikmin-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.6); border-radius: 4px; }
+
+.empty-garden {
+  color: white;
+  text-align: center;
+  font-size: 1.1em;
+  padding: 30px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  width: 100%;
+}
+
+.pikmin {
+  position: relative;
+  width: 38px;
+  height: 58px;
+  animation: bounce 2s ease-in-out infinite;
+  transform-origin: bottom center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.pikmin:hover { transform: scale(1.3) translateY(-8px); z-index: 10; }
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes spawn {
+  0%   { transform: scale(0) rotate(-180deg); opacity: 0; }
+  60%  { transform: scale(1.3) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+.pikmin.new { animation: spawn 0.6s ease-out, bounce 2s ease-in-out 0.6s infinite; }
+
+/* 実績 */
+.achievements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-add {
+  background: linear-gradient(135deg, #FF7043, #FFD54F);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 112, 67, 0.4);
+  transition: all 0.2s;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255, 112, 67, 0.5); }
+
+.filter-bar { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+
+.filter-btn {
+  padding: 6px 16px;
+  border: 2px solid #E0E0E0;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.filter-btn.active { background: #2d6a3e; color: white; border-color: #2d6a3e; }
+
+.achievement-card {
+  background: linear-gradient(135deg, #FFFDE7, #FFF9C4);
+  border: 3px solid #FFD54F;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s;
+}
+
+.achievement-card:hover { transform: translateX(4px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+.achievement-card.completed { background: linear-gradient(135deg, #C8E6C9, #A5D6A7); border-color: #66BB6A; }
+
+.achievement-info { flex: 1; min-width: 0; }
+.achievement-title { font-size: 1.2em; font-weight: bold; color: #333; margin-bottom: 5px; word-break: break-word; }
+.achievement-desc { color: #555; margin-bottom: 10px; font-size: 0.95em; word-break: break-word; }
+
+.achievement-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 193, 7, 0.25);
+  padding: 6px 14px;
+  border-radius: 15px;
+  font-size: 0.95em;
+  color: #6D4C00;
+  font-weight: bold;
+  border: 1.5px solid rgba(255, 193, 7, 0.5);
+}
+
+.achievement-actions { display: flex; gap: 8px; flex-direction: column; flex-shrink: 0; }
+
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.btn:hover { transform: translateY(-2px); }
+.btn-complete { background: #66BB6A; color: white; box-shadow: 0 3px 8px rgba(102, 187, 106, 0.4); }
+.btn-uncomplete { background: #FFA726; color: white; box-shadow: 0 3px 8px rgba(255, 167, 38, 0.4); }
+.btn-edit { background: #42A5F5; color: white; box-shadow: 0 3px 8px rgba(66, 165, 245, 0.4); }
+.btn-delete { background: #EF5350; color: white; box-shadow: 0 3px 8px rgba(239, 83, 80, 0.4); }
+
+/* モーダル */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal.active { display: flex; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal h3 { color: #2d6a3e; margin-bottom: 20px; text-align: center; font-size: 1.5em; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 6px; font-weight: bold; color: #333; }
+
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #E0E0E0;
+  border-radius: 12px;
+  font-size: 1em;
+  font-family: inherit;
+  background: #FAFAFA;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: #FFD54F; background: white;
+}
+
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.pikmin-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+.pikmin-option {
+  padding: 10px 6px;
+  border: 3px solid #E0E0E0;
+  border-radius: 12px;
+  background: #FAFAFA;
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.8em;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.pikmin-option:hover { border-color: #FFD54F; }
+.pikmin-option.selected { border-color: #2d6a3e; background: #E8F5E9; transform: scale(1.05); }
+.pikmin-option svg { display: block; margin: 0 auto 4px; }
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; }
+
+.btn-save {
+  background: linear-gradient(135deg, #66BB6A, #43A047);
+  color: white;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1em;
+  box-shadow: 0 4px 10px rgba(102, 187, 106, 0.4);
+}
+
+.btn-cancel {
+  background: #BDBDBD;
+  color: white;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1em;
+}
+
+/* ================================================= */
+/* 詳細ビューモーダル（全画面・ピクミン大画面表示）    */
+/* ================================================= */
+.detail-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, #87CEEB 0%, #B6E390 55%, #4CAF50 100%);
+  z-index: 2000;
+  flex-direction: column;
+}
+
+.detail-modal.active { display: flex; animation: fadeIn 0.3s; }
+
+.detail-header {
+  padding: 18px 25px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  z-index: 2;
+}
+
+.detail-header h2 {
+  color: #2d6a3e;
+  font-size: 1.6em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-counter {
+  background: linear-gradient(135deg, #FFD54F, #FF7043);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-close-detail {
+  background: #EF5350;
+  color: white;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.3em;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(239, 83, 80, 0.4);
+  transition: transform 0.2s;
+}
+
+.btn-close-detail:hover { transform: rotate(90deg) scale(1.1); }
+
+.detail-stage {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+}
+
+.detail-ground {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 40px;
+}
+
+.detail-pikmin {
+  width: 80px;
+  height: 120px;
+  animation: bounce 2s ease-in-out infinite;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.detail-pikmin:hover { transform: scale(1.2) translateY(-10px); z-index: 5; }
+
+.detail-empty {
+  color: white;
+  text-align: center;
+  font-size: 1.4em;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  padding: 60px 20px;
+  width: 100%;
+}
+
+/* ピクミンフィルター（詳細ビュー内） */
+.detail-filters {
+  display: flex;
+  gap: 8px;
+  padding: 15px 25px;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(4px);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.detail-filter-btn {
+  padding: 6px 14px;
+  border: 2px solid rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.6);
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.detail-filter-btn.active { background: #2d6a3e; color: white; border-color: #2d6a3e; }
+
+/* トースト */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: linear-gradient(135deg, #66BB6A, #43A047);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 30px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  z-index: 2500;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-weight: bold;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.confetti {
+  position: fixed;
+  top: -10px;
+  z-index: 1500;
+  pointer-events: none;
+  animation: fall 3s ease-in forwards;
+}
+
+@keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+.footer { text-align: center; margin-top: 20px; padding: 15px; }
+
+.btn-reset {
+  background: rgba(255,255,255,0.8);
+  color: #666;
+  border: 2px solid #BDBDBD;
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-reset:hover { background: rgba(239, 83, 80, 0.1); border-color: #EF5350; color: #EF5350; }
+
+@media (max-width: 600px) {
+  header h1 { font-size: 1.8em; }
+  .achievement-card { flex-direction: column; align-items: stretch; }
+  .achievement-actions { flex-direction: row; justify-content: flex-end; flex-wrap: wrap; }
+  .pikmin-selector { grid-template-columns: repeat(3, 1fr); }
+  .detail-pikmin { width: 60px; height: 90px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 背景レイヤー（ピクミン・雲・草花） -->
+<div class="bg-layer" id="bgLayer"></div>
+
+<div class="container">
+  <header>
+    <h1>🌱 ピクミンガーデン 🌱</h1>
+    <p>実績を達成してピクミンを集めよう！</p>
+  </header>
+
+  <div class="progress-container">
+    <h2 class="section-title">🏆 達成進捗</h2>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+      <div class="progress-text" id="progressText">0 / 0 達成</div>
+    </div>
+  </div>
+
+  <section class="stats">
+    <h2 class="section-title">🌟 ピクミンコレクション</h2>
+    <div class="stats-grid" id="statsGrid"></div>
+  </section>
+
+  <section class="garden">
+    <div class="garden-header">
+      <h2 class="section-title">🏡 ピクミンガーデン</h2>
+      <button class="btn-detail" onclick="openDetailModal()">🔍 詳しく見る</button>
+    </div>
+    <div class="pikmin-area" id="pikminArea"></div>
+  </section>
+
+  <section class="achievements">
+    <div class="achievements-header">
+      <h2 class="section-title">📋 実績リスト</h2>
+      <button class="btn-add" onclick="openModal()">＋ 実績を追加</button>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">すべて</button>
+      <button class="filter-btn" data-filter="active" onclick="setFilter('active')">未達成</button>
+      <button class="filter-btn" data-filter="completed" onclick="setFilter('completed')">達成済み</button>
+    </div>
+    <div id="achievementsList"></div>
+  </section>
+
+  <div class="footer">
+    <button class="btn-reset" onclick="resetAll()">🔄 すべてリセット</button>
+  </div>
+</div>
+
+<!-- 実績追加/編集モーダル -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">実績を追加</h3>
+    <div class="form-group">
+      <label>🎯 実績タイトル</label>
+      <input type="text" id="achTitle" placeholder="例: 早起きした" maxlength="50">
+    </div>
+    <div class="form-group">
+      <label>📝 説明</label>
+      <textarea id="achDesc" rows="2" placeholder="例: 朝6時までに起きる" maxlength="200"></textarea>
+    </div>
+    <div class="form-group">
+      <label>🌸 もらえるピクミン</label>
+      <div class="pikmin-selector" id="pikminSelector"></div>
+    </div>
+    <div class="form-group">
+      <label>🔢 もらえる数</label>
+      <input type="number" id="achCount" min="1" max="50" value="3">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveAchievement()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 詳細ビューモーダル -->
+<div class="detail-modal" id="detailModal">
+  <div class="detail-header">
+    <h2>🏡 ピクミンガーデン詳細</h2>
+    <span class="detail-counter" id="detailCounter">合計 0匹</span>
+    <button class="btn-close-detail" onclick="closeDetailModal()">✕</button>
+  </div>
+  <div class="detail-filters" id="detailFilters"></div>
+  <div class="detail-stage">
+    <div class="detail-ground" id="detailGround"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// スマホ判定（軽量化用）
+const IS_MOBILE = window.matchMedia('(max-width: 768px)').matches
+                  || 'ontouchstart' in window;
+const IS_REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const PIKMIN_TYPES = {
+  red:    { name: '赤ピクミン',   color: '#E53935', emoji: '🔴', accent: '#B71C1C' },
+  blue:   { name: '青ピクミン',   color: '#1E88E5', emoji: '🔵', accent: '#0D47A1' },
+  yellow: { name: '黄ピクミン',   color: '#FDD835', emoji: '🟡', accent: '#F57F17' },
+  white:  { name: '白ピクミン',   color: '#F5F5F5', emoji: '⚪', accent: '#BDBDBD' },
+  purple: { name: '紫ピクミン',   color: '#8E24AA', emoji: '🟣', accent: '#4A148C' },
+  rock:   { name: '岩ピクミン',   color: '#37474F', emoji: '🪨', accent: '#1A1A1A' },
+  winged: { name: '羽ピクミン',   color: '#EC407A', emoji: '🌸', accent: '#AD1457' },
+  ice:    { name: '氷ピクミン',   color: '#80DEEA', emoji: '🧊', accent: '#00838F' }
+};
+
+const DEFAULT_ACHIEVEMENTS = [
+  { id: 'd1', title: 'はじめの一歩',   desc: 'アプリを開いた',         pikminType: 'red',    pikminCount: 3, completed: false },
+  { id: 'd2', title: '早起きチャレンジ', desc: '朝6時までに起きた',       pikminType: 'yellow', pikminCount: 5, completed: false },
+  { id: 'd3', title: '集中勉強',       desc: '1時間集中して勉強した',   pikminType: 'blue',   pikminCount: 3, completed: false },
+  { id: 'd4', title: '運動する',       desc: '30分以上運動した',        pikminType: 'purple', pikminCount: 4, completed: false },
+  { id: 'd5', title: '本を読む',       desc: '本を30分読んだ',          pikminType: 'white',  pikminCount: 3, completed: false },
+  { id: 'd6', title: 'お部屋キレイ',   desc: '自分の部屋を掃除した',    pikminType: 'rock',   pikminCount: 2, completed: false },
+  { id: 'd7', title: '深呼吸・瞑想',   desc: '5分間瞑想した',           pikminType: 'ice',    pikminCount: 2, completed: false },
+  { id: 'd8', title: '新しい挑戦',     desc: '初めてのことをやってみた', pikminType: 'winged', pikminCount: 5, completed: false }
+];
+
+let achievements = [];
+let editingId = null;
+let selectedType = 'red';
+let currentFilter = 'all';
+let detailFilter = 'all';
+
+function load() {
+  const saved = localStorage.getItem('pikminGame_v1');
+  if (saved) {
+    try { achievements = JSON.parse(saved); }
+    catch(e) { achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS)); }
+  } else {
+    achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
+    save();
+  }
+  initBackground();
+  render();
+  renderPikminSelector();
+}
+
+function save() { localStorage.setItem('pikminGame_v1', JSON.stringify(achievements)); }
+
+function render() {
+  renderStats();
+  renderGarden();
+  renderAchievements();
+  renderProgress();
+  renderBgPikmin();
+}
+
+function pikminSVG(type, size = 38) {
+  const p = PIKMIN_TYPES[type];
+  const h = Math.round(size * 58 / 38);
+
+  // 共通パーツ：茎と葉っぱ
+  const stem = `<line x1="20" y1="32" x2="20" y2="14" stroke="#2d6a3e" stroke-width="2.5"/>`;
+  const leaf = `
+    <ellipse cx="22" cy="8" rx="9" ry="5" fill="#66BB6A" transform="rotate(-15 22 8)"/>
+    <ellipse cx="22" cy="8" rx="6" ry="3" fill="#81C784" transform="rotate(-15 22 8)"/>
+    <path d="M 20 14 Q 22 11 26 6" stroke="#2d6a3e" stroke-width="0.4" fill="none"/>`;
+  const legs = `
+    <line x1="16" y1="56" x2="14" y2="59" stroke="${p.accent}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="24" y1="56" x2="26" y2="59" stroke="${p.accent}" stroke-width="2.5" stroke-linecap="round"/>`;
+
+  let behind = '', body = '', extras = '', eyes = '';
+
+  switch (type) {
+    case 'red':
+      // 赤：スリムな先細り体型 + 尖った鼻
+      body = `
+        <path d="M 20 28 Q 9 33 10 47 Q 11 57 20 57 Q 29 57 30 47 Q 31 33 20 28 Z"
+              fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>
+        <path d="M 20 31 L 17.5 36 L 22.5 36 Z" fill="${p.accent}" opacity="0.6"/>`;
+      eyes = `
+        <ellipse cx="15" cy="40" rx="2" ry="3" fill="white"/>
+        <ellipse cx="25" cy="40" rx="2" ry="3" fill="white"/>
+        <circle cx="15" cy="40.5" r="1.3" fill="#222"/>
+        <circle cx="25" cy="40.5" r="1.3" fill="#222"/>
+        <circle cx="14.5" cy="39.5" r="0.5" fill="white"/>
+        <circle cx="24.5" cy="39.5" r="0.5" fill="white"/>`;
+      break;
+
+    case 'blue':
+      // 青の特徴：ほっぺの白いヒレ（エラ）
+      behind = `
+        <path d="M 9 40 Q 5 42 4 46 Q 8 44 11 44 Z" fill="white" stroke="${p.accent}" stroke-width="0.4"/>
+        <path d="M 31 40 Q 35 42 36 46 Q 32 44 29 44 Z" fill="white" stroke="${p.accent}" stroke-width="0.4"/>`;
+      body = `<path d="M 20 29 Q 10 33 10 46 Q 10 57 20 57 Q 30 57 30 46 Q 30 33 20 29 Z"
+                    fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>`;
+      eyes = `
+        <ellipse cx="15" cy="40" rx="2.8" ry="3.5" fill="white"/>
+        <ellipse cx="25" cy="40" rx="2.8" ry="3.5" fill="white"/>
+        <circle cx="15" cy="40.5" r="1.4" fill="#222"/>
+        <circle cx="25" cy="40.5" r="1.4" fill="#222"/>
+        <circle cx="14.3" cy="39.5" r="0.6" fill="white"/>
+        <circle cx="24.3" cy="39.5" r="0.6" fill="white"/>`;
+      // 青の特徴：おちょぼ口
+      extras = `<path d="M 18 48 Q 20 50 22 48" stroke="${p.accent}" stroke-width="0.8" fill="none" stroke-linecap="round"/>`;
+      break;
+
+    case 'yellow':
+      // 黄の特徴：大きく尖った耳
+      extras = `
+        <path d="M 11 36 L 2 30 L 9 44 Z" fill="${p.color}" stroke="${p.accent}" stroke-width="1" stroke-linejoin="round"/>
+        <path d="M 29 36 L 38 30 L 31 44 Z" fill="${p.color}" stroke="${p.accent}" stroke-width="1" stroke-linejoin="round"/>
+        <path d="M 10 37 L 6 33" stroke="${p.accent}" stroke-width="0.4" opacity="0.5"/>
+        <path d="M 30 37 L 34 33" stroke="${p.accent}" stroke-width="0.4" opacity="0.5"/>`;
+      body = `<path d="M 20 29 Q 11 34 11 46 Q 11 57 20 57 Q 29 57 29 46 Q 29 34 20 29 Z"
+                    fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>`;
+      eyes = `
+        <ellipse cx="15" cy="39" rx="2.5" ry="3.5" fill="white"/>
+        <ellipse cx="25" cy="39" rx="2.5" ry="3.5" fill="white"/>
+        <circle cx="15" cy="40" r="1.3" fill="#222"/>
+        <circle cx="25" cy="40" r="1.3" fill="#222"/>
+        <circle cx="14.5" cy="38.8" r="0.5" fill="white"/>
+        <circle cx="24.5" cy="38.8" r="0.5" fill="white"/>`;
+      break;
+
+    case 'white':
+      // 白：スリムな体
+      body = `<ellipse cx="20" cy="42" rx="11" ry="15" fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>`;
+      // 白の特徴：真っ赤な目
+      eyes = `
+        <circle cx="15" cy="40" r="3" fill="#FF1744" stroke="#B71C1C" stroke-width="0.5"/>
+        <circle cx="25" cy="40" r="3" fill="#FF1744" stroke="#B71C1C" stroke-width="0.5"/>
+        <circle cx="14" cy="39" r="0.8" fill="#FFCDD2"/>
+        <circle cx="24" cy="39" r="0.8" fill="#FFCDD2"/>`;
+      break;
+
+    case 'purple':
+      // 紫の特徴：ずんぐりむっくり体型
+      body = `<ellipse cx="20" cy="43" rx="14" ry="16" fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>`;
+      // 紫の特徴：頭からトゲトゲの毛
+      extras = `
+        <line x1="14" y1="30" x2="11" y2="24" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>
+        <line x1="16" y1="28" x2="14" y2="22" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>
+        <line x1="18" y1="27" x2="17" y2="21" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>
+        <line x1="22" y1="27" x2="23" y2="21" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>
+        <line x1="24" y1="28" x2="26" y2="22" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>
+        <line x1="26" y1="30" x2="29" y2="24" stroke="${p.accent}" stroke-width="0.9" stroke-linecap="round"/>`;
+      eyes = `
+        <ellipse cx="15" cy="41" rx="2" ry="3" fill="white"/>
+        <ellipse cx="25" cy="41" rx="2" ry="3" fill="white"/>
+        <circle cx="15" cy="41.5" r="1.3" fill="#222"/>
+        <circle cx="25" cy="41.5" r="1.3" fill="#222"/>
+        <circle cx="14.5" cy="40.5" r="0.5" fill="white"/>
+        <circle cx="24.5" cy="40.5" r="0.5" fill="white"/>`;
+      break;
+
+    case 'rock':
+      // 岩の特徴：ゴツゴツした黒い多面体
+      body = `
+        <polygon points="20,28 9,33 7,43 10,54 16,58 24,58 30,54 33,43 31,33"
+                 fill="${p.color}" stroke="${p.accent}" stroke-width="1.2" stroke-linejoin="round"/>
+        <polygon points="20,28 9,33 12,42 20,40" fill="#546E7A" opacity="0.6"/>
+        <polygon points="20,28 31,33 28,42 20,40" fill="#263238" opacity="0.7"/>
+        <polygon points="7,43 10,54 16,58 12,50 10,43" fill="#263238" opacity="0.5"/>
+        <polygon points="33,43 30,54 24,58 28,50 30,43" fill="#546E7A" opacity="0.4"/>
+        <line x1="20" y1="28" x2="20" y2="40" stroke="${p.accent}" stroke-width="0.4" opacity="0.6"/>
+        <line x1="12" y1="42" x2="28" y2="42" stroke="${p.accent}" stroke-width="0.4" opacity="0.5"/>
+        <line x1="12" y1="50" x2="28" y2="50" stroke="${p.accent}" stroke-width="0.4" opacity="0.4"/>`;
+      eyes = `
+        <ellipse cx="15" cy="40" rx="2.5" ry="3" fill="white"/>
+        <ellipse cx="25" cy="40" rx="2.5" ry="3" fill="white"/>
+        <circle cx="15" cy="40.5" r="1.3" fill="#222"/>
+        <circle cx="25" cy="40.5" r="1.3" fill="#222"/>
+        <circle cx="14.5" cy="39.8" r="0.5" fill="white"/>
+        <circle cx="24.5" cy="39.8" r="0.5" fill="white"/>`;
+      break;
+
+    case 'winged':
+      // 羽の特徴：透明な羽（体の後ろ）
+      behind = `
+        <ellipse cx="7" cy="38" rx="10" ry="6" fill="rgba(220,240,255,0.75)"
+                 stroke="#B3E5FC" stroke-width="0.5" transform="rotate(-25 7 38)"/>
+        <ellipse cx="33" cy="38" rx="10" ry="6" fill="rgba(220,240,255,0.75)"
+                 stroke="#B3E5FC" stroke-width="0.5" transform="rotate(25 33 38)"/>
+        <path d="M 2 38 Q 7 34 12 38" stroke="#81D4FA" stroke-width="0.3" fill="none" opacity="0.6"/>
+        <path d="M 28 38 Q 33 34 38 38" stroke="#81D4FA" stroke-width="0.3" fill="none" opacity="0.6"/>`;
+      // 羽の特徴：やや小さな体
+      body = `<ellipse cx="20" cy="42" rx="10" ry="13" fill="${p.color}" stroke="${p.accent}" stroke-width="1"/>`;
+      // 羽の特徴：大きな青い目
+      eyes = `
+        <circle cx="15.5" cy="40" r="3.8" fill="#29B6F6" stroke="#01579B" stroke-width="0.5"/>
+        <circle cx="24.5" cy="40" r="3.8" fill="#29B6F6" stroke="#01579B" stroke-width="0.5"/>
+        <circle cx="15.5" cy="40.5" r="1.8" fill="#01579B"/>
+        <circle cx="24.5" cy="40.5" r="1.8" fill="#01579B"/>
+        <circle cx="14.8" cy="39" r="1" fill="white"/>
+        <circle cx="23.8" cy="39" r="1" fill="white"/>`;
+      break;
+
+    case 'ice':
+      // 氷の特徴：透明感のあるクリスタル体
+      body = `
+        <polygon points="20,28 11,35 10,47 14,57 20,58 26,57 30,47 29,35"
+                 fill="${p.color}" stroke="${p.accent}" stroke-width="1" opacity="0.9"/>
+        <polygon points="20,28 11,35 14,47 20,45" fill="white" opacity="0.4"/>
+        <polygon points="20,28 29,35 26,47 20,45" fill="${p.accent}" opacity="0.25"/>
+        <line x1="20" y1="28" x2="14" y2="57" stroke="white" stroke-width="0.5" opacity="0.8"/>
+        <line x1="20" y1="28" x2="26" y2="57" stroke="white" stroke-width="0.5" opacity="0.8"/>
+        <path d="M 13 38 L 15 40 L 13 43" stroke="white" stroke-width="0.6" fill="none" opacity="0.9"/>`;
+      eyes = `
+        <ellipse cx="15" cy="40" rx="2.5" ry="3" fill="white"/>
+        <ellipse cx="25" cy="40" rx="2.5" ry="3" fill="white"/>
+        <circle cx="15" cy="40.5" r="1.3" fill="#01579B"/>
+        <circle cx="25" cy="40.5" r="1.3" fill="#01579B"/>`;
+      break;
+  }
+
+  return `<svg viewBox="0 0 40 60" width="${size}" height="${h}">
+    ${behind}
+    ${stem}
+    ${leaf}
+    ${body}
+    ${extras}
+    ${eyes}
+    ${legs}
+  </svg>`;
+}
+
+function getAllEarnedPikmin() {
+  const result = [];
+  achievements.filter(a => a.completed).forEach(a => {
+    for (let i = 0; i < a.pikminCount; i++) result.push(a.pikminType);
+  });
+  return result;
+}
+
+function renderStats() {
+  const stats = {};
+  for (const type in PIKMIN_TYPES) stats[type] = 0;
+  achievements.filter(a => a.completed).forEach(a => {
+    stats[a.pikminType] = (stats[a.pikminType] || 0) + a.pikminCount;
+  });
+
+  const grid = document.getElementById('statsGrid');
+  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  let html = `<div class="stat-card" style="background: linear-gradient(135deg, #FFD54F, #FF7043);">
+    <span class="count">${total}</span><span class="label">🌱 合計</span>
+  </div>`;
+
+  for (const type in PIKMIN_TYPES) {
+    const p = PIKMIN_TYPES[type];
+    html += `<div class="stat-card" style="background: linear-gradient(135deg, ${p.color}, ${p.accent});">
+      <span class="count">${stats[type]}</span><span class="label">${p.emoji} ${p.name}</span>
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderGarden() {
+  const area = document.getElementById('pikminArea');
+  const pikmin = getAllEarnedPikmin();
+
+  if (pikmin.length === 0) {
+    area.innerHTML = '<div class="empty-garden">🌱 実績を達成してピクミンを集めよう！ 🌱</div>';
+    return;
+  }
+
+  pikmin.sort(() => Math.random() - 0.5);
+  area.innerHTML = pikmin.map((type, i) =>
+    `<div class="pikmin" style="animation-delay: ${(i % 12) * 0.1}s" title="${PIKMIN_TYPES[type].name}">
+      ${pikminSVG(type)}
+    </div>`
+  ).join('');
+}
+
+function renderAchievements() {
+  const list = document.getElementById('achievementsList');
+  let filtered = achievements;
+  if (currentFilter === 'active') filtered = achievements.filter(a => !a.completed);
+  else if (currentFilter === 'completed') filtered = achievements.filter(a => a.completed);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div style="text-align:center;color:#999;padding:30px;font-size:1.1em;">
+      ${currentFilter === 'all' ? '実績がありません。＋ボタンから追加してください。' :
+        currentFilter === 'active' ? '未達成の実績はありません。すばらしい！' :
+        '達成済みの実績はまだありません。'}
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => {
+    const p = PIKMIN_TYPES[a.pikminType];
+    return `<div class="achievement-card${a.completed ? ' completed' : ''}">
+      <div class="achievement-info">
+        <div class="achievement-title">${a.completed ? '✅' : '⭐'} ${esc(a.title)}</div>
+        <div class="achievement-desc">${esc(a.desc || '')}</div>
+        <div class="achievement-reward">${pikminSVG(a.pikminType, 22)} ${p.name} × ${a.pikminCount}匹</div>
+      </div>
+      <div class="achievement-actions">
+        ${a.completed
+          ? `<button class="btn btn-uncomplete" onclick="toggle('${a.id}')">↩ 戻す</button>`
+          : `<button class="btn btn-complete" onclick="toggle('${a.id}')">✓ 達成！</button>`}
+        <button class="btn btn-edit" onclick="edit('${a.id}')">✎ 編集</button>
+        <button class="btn btn-delete" onclick="del('${a.id}')">🗑 削除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProgress() {
+  const total = achievements.length;
+  const done = achievements.filter(a => a.completed).length;
+  const percent = total ? (done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = percent + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} 達成 (${percent.toFixed(0)}%)`;
+}
+
+function renderPikminSelector() {
+  const sel = document.getElementById('pikminSelector');
+  sel.innerHTML = Object.keys(PIKMIN_TYPES).map(type => {
+    const p = PIKMIN_TYPES[type];
+    return `<div class="pikmin-option${type === selectedType ? ' selected' : ''}" data-type="${type}" onclick="selectPikminType('${type}')">
+      ${pikminSVG(type, 28)}${p.name.replace('ピクミン', '')}
+    </div>`;
+  }).join('');
+}
+
+/* ============================================= */
+/* 背景レイヤー描画                               */
+/* ============================================= */
+function initBackground() {
+  const layer = document.getElementById('bgLayer');
+  let html = '';
+
+  // モバイルでは要素数を減らして軽量化
+  const CLOUD_COUNT  = IS_MOBILE ? 2  : 4;
+  const GRASS_COUNT  = IS_MOBILE ? 15 : 35;
+  const FLOWER_COUNT = IS_MOBILE ? 4  : 8;
+
+  // 雲
+  for (let i = 0; i < CLOUD_COUNT; i++) {
+    const size = 40 + Math.random() * 40;
+    const top = 5 + Math.random() * 35;
+    const dur = 60 + Math.random() * 40;
+    const delay = -Math.random() * dur;
+    html += `<div class="cloud" style="
+      width: ${size}px; height: ${size * 0.5}px;
+      top: ${top}%;
+      animation-duration: ${dur}s;
+      animation-delay: ${delay}s;
+    "></div>`;
+  }
+
+  // 草（地面に沢山）
+  for (let i = 0; i < GRASS_COUNT; i++) {
+    const left = Math.random() * 100;
+    const height = 15 + Math.random() * 20;
+    const delay = Math.random() * 3;
+    html += `<div class="grass-blade" style="
+      left: ${left}%; height: ${height}px;
+      animation-delay: ${delay}s;
+    "></div>`;
+  }
+
+  // 花（あちこちに）
+  const flowers = ['🌼', '🌸', '🌺', '🌻', '🌷'];
+  for (let i = 0; i < FLOWER_COUNT; i++) {
+    const left = Math.random() * 95;
+    const bottom = Math.random() * 15;
+    const delay = Math.random() * 4;
+    html += `<div class="flower" style="
+      left: ${left}%; bottom: ${bottom}%;
+      animation-delay: ${delay}s;
+    ">${flowers[Math.floor(Math.random() * flowers.length)]}</div>`;
+  }
+
+  layer.innerHTML = html;
+}
+
+function renderBgPikmin() {
+  const layer = document.getElementById('bgLayer');
+  // 既存のbg-pikminを一度削除（雲・草・花は残す）
+  layer.querySelectorAll('.bg-pikmin').forEach(el => el.remove());
+
+  const pikmin = getAllEarnedPikmin();
+  if (pikmin.length === 0) return;
+
+  // 背景に表示する数（モバイルは軽量化: 最大10匹 / PC: 最大20匹）
+  const MAX_BG = IS_MOBILE ? 10 : 20;
+  const max = Math.min(MAX_BG, pikmin.length);
+  const sample = [];
+  for (let i = 0; i < max; i++) {
+    sample.push(pikmin[Math.floor(Math.random() * pikmin.length)]);
+  }
+
+  const animations = ['walk-1', 'walk-2', 'walk-3', 'walk-4', 'walk-5'];
+  const frag = document.createDocumentFragment();
+
+  sample.forEach((type, i) => {
+    const div = document.createElement('div');
+    div.className = 'bg-pikmin';
+    const anim = animations[i % animations.length];
+    const dur = 8 + Math.random() * 10;
+    const delay = -Math.random() * dur;
+    const top = 20 + Math.random() * 70;
+    const left = Math.random() * 95;
+    const size = 28 + Math.random() * 20;
+    // reduced-motion設定時は歩くアニメーションを無効化して省電力化
+    const animCSS = IS_REDUCED_MOTION
+      ? 'none'
+      : `${anim} ${dur}s ease-in-out infinite, bounce 2s ease-in-out infinite`;
+    div.style.cssText = `
+      top: ${top}%;
+      left: ${left}%;
+      animation: ${animCSS};
+      animation-delay: ${delay}s, ${Math.random() * 2}s;
+    `;
+    div.innerHTML = pikminSVG(type, size);
+    frag.appendChild(div);
+  });
+
+  layer.appendChild(frag);
+}
+
+/* ============================================= */
+/* 詳細ビューモーダル                              */
+/* ============================================= */
+function openDetailModal() {
+  detailFilter = 'all';
+  renderDetailFilters();
+  renderDetailGround();
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function closeDetailModal() {
+  document.getElementById('detailModal').classList.remove('active');
+}
+
+function setDetailFilter(f) {
+  detailFilter = f;
+  renderDetailFilters();
+  renderDetailGround();
+}
+
+function renderDetailFilters() {
+  const pikmin = getAllEarnedPikmin();
+  const counts = {};
+  pikmin.forEach(t => counts[t] = (counts[t] || 0) + 1);
+
+  const container = document.getElementById('detailFilters');
+  let html = `<button class="detail-filter-btn ${detailFilter === 'all' ? 'active' : ''}" onclick="setDetailFilter('all')">
+    🌱 すべて (${pikmin.length})
+  </button>`;
+
+  for (const type in PIKMIN_TYPES) {
+    if (!counts[type]) continue;
+    const p = PIKMIN_TYPES[type];
+    html += `<button class="detail-filter-btn ${detailFilter === type ? 'active' : ''}" onclick="setDetailFilter('${type}')">
+      ${p.emoji} ${p.name} (${counts[type]})
+    </button>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderDetailGround() {
+  const ground = document.getElementById('detailGround');
+  const counter = document.getElementById('detailCounter');
+
+  let pikmin = getAllEarnedPikmin();
+  if (detailFilter !== 'all') pikmin = pikmin.filter(t => t === detailFilter);
+
+  counter.textContent = `${detailFilter === 'all' ? '合計' : PIKMIN_TYPES[detailFilter].name} ${pikmin.length}匹`;
+
+  if (pikmin.length === 0) {
+    ground.innerHTML = '<div class="detail-empty">🌱 まだピクミンがいません<br>実績を達成して集めよう！</div>';
+    return;
+  }
+
+  ground.innerHTML = pikmin.map((type, i) =>
+    `<div class="detail-pikmin" style="animation-delay: ${(i % 20) * 0.08}s" title="${PIKMIN_TYPES[type].name}">
+      ${pikminSVG(type, 80)}
+    </div>`
+  ).join('');
+}
+
+/* ============================================= */
+/* 実績操作                                        */
+/* ============================================= */
+function selectPikminType(type) { selectedType = type; renderPikminSelector(); }
+
+function toggle(id) {
+  const a = achievements.find(x => x.id === id);
+  if (!a) return;
+  a.completed = !a.completed;
+  save();
+  render();
+  if (a.completed) {
+    const p = PIKMIN_TYPES[a.pikminType];
+    showToast(`🎉 ${p.emoji} ${p.name}を ${a.pikminCount}匹 ゲット！`);
+    fireConfetti(p.color);
+  }
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modalTitle').textContent = id ? '実績を編集' : '実績を追加';
+  if (id) {
+    const a = achievements.find(x => x.id === id);
+    document.getElementById('achTitle').value = a.title;
+    document.getElementById('achDesc').value = a.desc || '';
+    selectedType = a.pikminType;
+    document.getElementById('achCount').value = a.pikminCount;
+  } else {
+    document.getElementById('achTitle').value = '';
+    document.getElementById('achDesc').value = '';
+    selectedType = 'red';
+    document.getElementById('achCount').value = 3;
+  }
+  renderPikminSelector();
+  document.getElementById('modal').classList.add('active');
+  setTimeout(() => document.getElementById('achTitle').focus(), 100);
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('active'); editingId = null; }
+
+function saveAchievement() {
+  const title = document.getElementById('achTitle').value.trim();
+  const desc = document.getElementById('achDesc').value.trim();
+  const count = Math.max(1, Math.min(50, parseInt(document.getElementById('achCount').value) || 1));
+
+  if (!title) { alert('タイトルを入力してください'); return; }
+
+  if (editingId) {
+    const a = achievements.find(x => x.id === editingId);
+    a.title = title; a.desc = desc; a.pikminType = selectedType; a.pikminCount = count;
+    showToast('✎ 実績を更新しました');
+  } else {
+    achievements.push({
+      id: 'a' + Date.now(), title, desc,
+      pikminType: selectedType, pikminCount: count, completed: false
+    });
+    showToast('✨ 新しい実績を追加しました！');
+  }
+  save(); render(); closeModal();
+}
+
+function edit(id) { openModal(id); }
+
+function del(id) {
+  const a = achievements.find(x => x.id === id);
+  if (!a) return;
+  if (confirm(`「${a.title}」を削除しますか？`)) {
+    achievements = achievements.filter(x => x.id !== id);
+    save(); render();
+    showToast('🗑 実績を削除しました');
+  }
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderAchievements();
+}
+
+function resetAll() {
+  if (confirm('本当にすべての進捗と実績をリセットしますか？\nこの操作は元に戻せません。')) {
+    achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
+    save(); render();
+    showToast('🔄 リセットしました');
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function fireConfetti(mainColor) {
+  const colors = [mainColor, '#FFD54F', '#FF7043', '#66BB6A', '#42A5F5', '#AB47BC'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.width = (6 + Math.random() * 8) + 'px';
+    c.style.height = (10 + Math.random() * 14) + 'px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (2 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * 0.3) + 's';
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target.id === 'modal') closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal();
+    closeDetailModal();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
