@@ -521,6 +521,19 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 
 .form-group textarea { resize: vertical; min-height: 60px; }
 
+@keyframes shake-input {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-7px); }
+  40%      { transform: translateX(7px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.input-error {
+  border-color: #EF5350 !important;
+  box-shadow: 0 0 0 3px rgba(239,83,80,0.18) !important;
+  animation: shake-input 0.4s ease;
+}
+
 .pikmin-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 
 .pikmin-option {
@@ -1474,7 +1487,7 @@ button:focus-visible,
     </div>
     <div class="form-group">
       <label>🍎 餌ボーナス（1〜10個）</label>
-      <input type="number" id="achCount" min="1" max="10" value="3">
+      <input type="number" id="achCount" min="1" max="10" step="1" value="3">
       <small class="hint">達成するとピクミン1匹＋この数の餌が貰えます。1日の上限を超えた分は餌として加算されます。</small>
     </div>
     <div class="modal-actions">
@@ -1663,8 +1676,16 @@ const STORAGE_KEY = 'pikminGame_v2';
 const LEGACY_KEY  = 'pikminGame_v1';
 
 function load() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const legacy = localStorage.getItem(LEGACY_KEY);
+  var saved = null;
+  var legacy = null;
+  try {
+    saved  = localStorage.getItem(STORAGE_KEY);
+    legacy = localStorage.getItem(LEGACY_KEY);
+  } catch(e) {
+    // ストレージへのアクセス自体がブロックされている環境（プライベートブラウズ等）
+    console.warn('localStorage読み込み失敗:', e);
+    showToast('⚠ このブラウザ設定ではデータが保存されません（シークレットモード等）');
+  }
 
   if (saved) {
     try { state = normalizeState(JSON.parse(saved)); }
@@ -1685,7 +1706,14 @@ function load() {
   renderPikminSelector();
 }
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e) {
+    // シークレットモード・ストレージ制限時は進行データを失わず続行
+    console.warn('localStorage保存失敗（シークレットモード等）:', e);
+  }
+}
 
 function makeFreshState() {
   return {
@@ -3144,8 +3172,13 @@ function saveAchievement() {
   const foodReward = Math.max(1, Math.min(10, parseInt(document.getElementById('achCount').value) || 1));
 
   if (!title) {
+    var titleEl = document.getElementById('achTitle');
+    titleEl.classList.remove('input-error');
+    void titleEl.offsetWidth; // reflow でアニメをリセット
+    titleEl.classList.add('input-error');
+    titleEl.focus();
     showToast('⚠ タイトルを入力してください');
-    document.getElementById('achTitle').focus();
+    setTimeout(function() { titleEl.classList.remove('input-error'); }, 900);
     return;
   }
 
@@ -3161,6 +3194,8 @@ function saveAchievement() {
       foodReward,
       completed: false,
       completedAt: null,
+      completionLog: [],
+      parentId: null,
     });
     showToast('✨ 新しい実績を追加しました！');
   }
