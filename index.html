@@ -1892,9 +1892,16 @@ function normalizeState(s) {
 function rolloverDailyCapsIfNeeded() {
   const tk = todayKey();
   if (state.resources.todayKey !== tk) {
-    state.resources.todayKey = tk;
-    state.resources.todayFood = 0;
-    state.resources.todayPikmin = 0;
+    // 日付が変わった → 全リセット
+    state.resources.todayKey     = tk;
+    state.resources.todayFood    = 0;
+    state.resources.todayPikmin  = 0;
+  } else {
+    // 同じ日でも todayPikmin を実際の bornAt 数から補正する
+    // （旧バグで「戻す」時にデクリメントされなかったカウンタの修正）
+    const startToday = startOfDayMs();
+    const actualBorn = state.pikmin.filter(p => p.bornAt >= startToday).length;
+    state.resources.todayPikmin  = Math.min(actualBorn, DAILY_PIKMIN_CAP);
   }
 }
 
@@ -3163,8 +3170,8 @@ function toggle(id) {
       title: '実績を戻しますか？',
       message: `「${a.title}」を未達成に戻します。`,
       warning: linked.length
-        ? `⚠ この実績でうまれた ${p.emoji} ${p.name} ${linked.length}匹 がガーデンから去ります（獲得した餌はそのまま）`
-        : '獲得した餌はそのまま残ります。',
+        ? `⚠ この実績でうまれた ${p.emoji} ${p.name} ${linked.length}匹 がガーデンから去り、獲得した餌も返却されます`
+        : '獲得した餌は返却されます。',
       okText: '戻す',
       danger: true,
       onOk: () => {
