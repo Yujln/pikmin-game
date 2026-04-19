@@ -1863,6 +1863,7 @@ function normalizeState(s) {
     completionLog: Array.isArray(a.completionLog) ? a.completionLog
       : (a.completed && a.completedAt ? [a.completedAt] : []),
     parentId: a.parentId || null,
+    lastGain: (a.completed && a.lastGain && typeof a.lastGain === 'object') ? a.lastGain : null,
   }));
   merged.pikmin = (s.pikmin || []).map(p => {
     const bornAt = p.bornAt || Date.now();
@@ -3167,13 +3168,34 @@ function toggle(id) {
       okText: '戻す',
       danger: true,
       onOk: () => {
+        // 獲得した餌・今日の上限カウンタも返却（farming バグ修正）
+        const r = state.resources;
+        const g = a.lastGain;
+        if (g) {
+          // 新フォーマット：正確に返却
+          const totalFood = (g.food || 0) + (g.bonus || 0);
+          r.food      = Math.max(0, r.food      - totalFood);
+          r.todayFood = Math.max(0, r.todayFood - totalFood);
+          if (g.born) r.todayPikmin = Math.max(0, r.todayPikmin - 1);
+        } else {
+          // レガシーデータ（lastGain 未記録）は foodReward を上限に最善努力で返却
+          const legacy = Math.min(r.food, Math.max(1, a.foodReward || 3));
+          r.food      = Math.max(0, r.food      - legacy);
+          r.todayFood = Math.max(0, r.todayFood - legacy);
+          // 生きているピクミンが紐付いていれば todayPikmin を1減らす
+          if (state.pikmin.some(x => x.fromAchievement === id && !x.diedAt)) {
+            r.todayPikmin = Math.max(0, r.todayPikmin - 1);
+          }
+        }
+        // 紐付く生きピクミンは消える（死亡履歴は残す）
         state.pikmin = state.pikmin.filter(x => !(x.fromAchievement === id && !x.diedAt));
         a.completed = false;
         a.completedAt = null;
+        a.lastGain = null;
         // completionLog の最後の1件を取り消す
         if (a.completionLog && a.completionLog.length > 0) a.completionLog.pop();
         save(); render();
-        showToast('↩ 実績を戻しました');
+        showToast('↩ 実績を戻しました（獲得した餌も返却）');
       }
     });
     return;
@@ -3197,10 +3219,13 @@ function toggle(id) {
   const foodGained = Math.min(reward, foodRoom);
 
   let bornOne = false;
+  let bonusFood = 0;
+  let bornPikminId = null;
   if (r.todayPikmin < DAILY_PIKMIN_CAP) {
     // 新規ピクミンが仲間に
+    bornPikminId = 'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     state.pikmin.push({
-      id: 'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      id: bornPikminId,
       type: a.pikminType,
       bornAt: Date.now(),
       lastFedAt: Date.now(),
@@ -3212,15 +3237,17 @@ function toggle(id) {
     bornOne = true;
   } else {
     // 今日のピクミン上限到達 → 代わりに餌ボーナス +3（今日の餌上限内）
-    const bonus = Math.max(0, Math.min(3, DAILY_FOOD_CAP - r.todayFood - foodGained));
-    r.food += bonus;
-    r.todayFood += bonus;
+    bonusFood = Math.max(0, Math.min(3, DAILY_FOOD_CAP - r.todayFood - foodGained));
+    r.food += bonusFood;
+    r.todayFood += bonusFood;
   }
   r.food += foodGained;
   r.todayFood += foodGained;
 
   a.completed = true;
   a.completedAt = Date.now();
+  // 獲得内訳を記録（「戻す」で正確に返却できるように）
+  a.lastGain = { food: foodGained, bonus: bonusFood, born: bornOne, pikminId: bornPikminId };
   // completionLog に達成タイムスタンプを記録
   if (!a.completionLog) a.completionLog = [];
   a.completionLog.push(Date.now());
