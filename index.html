@@ -686,6 +686,82 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 
 .detail-filter-btn.active { background: #2d6a3e; color: white; border-color: #2d6a3e; }
 
+/* ============================================= */
+/* 詳細ビュー：餌トレイ＆D&D                      */
+/* ============================================= */
+.food-tray {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255,249,196,0.92);
+  border-top: 2px solid rgba(255,183,77,0.5);
+  border-bottom: 2px solid rgba(255,183,77,0.5);
+  backdrop-filter: blur(4px);
+  flex-shrink: 0;
+  min-height: 56px;
+}
+.food-tray-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.food-tray-count {
+  font-size: 1.05em;
+  font-weight: bold;
+  color: #4E342E;
+}
+.food-tray-hint {
+  font-size: 0.78em;
+  color: #8D6E63;
+}
+.food-tray-hint .arrow {
+  display: inline-block;
+  animation: hint-bounce 1.4s ease-in-out infinite;
+}
+@keyframes hint-bounce {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(6px); }
+}
+.food-draggable {
+  font-size: 2.4em;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.25));
+  transition: transform 0.15s, filter 0.15s;
+  flex-shrink: 0;
+}
+.food-draggable:active { cursor: grabbing; transform: scale(1.25); }
+.food-draggable.empty  { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+
+/* ドラッグ中にピクミンが光る */
+.detail-pikmin.drag-over {
+  outline: 3px solid #FFB74D;
+  outline-offset: 4px;
+  transform: scale(1.18) translateY(-8px) !important;
+  filter: drop-shadow(0 0 10px rgba(255,183,77,0.8));
+  z-index: 10;
+}
+/* ドラッグ中は全ピクミンを少し明るくしてどこに落とせるか示す */
+.detail-ground.dragging-food .detail-pikmin:not(.drag-over) {
+  opacity: 0.75;
+}
+/* 移動するゴースト要素 */
+#feedGhost {
+  position: fixed;
+  font-size: 2.6em;
+  pointer-events: none;
+  z-index: 9999;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+  transition: none;
+  will-change: transform;
+}
+
 /* トースト */
 .toast {
   position: fixed;
@@ -1416,6 +1492,13 @@ button:focus-visible,
     <button class="btn-close-detail" data-action="close-detail">✕</button>
   </div>
   <div class="detail-filters" id="detailFilters"></div>
+  <div class="food-tray" id="detailFoodTray">
+    <div class="food-tray-info">
+      <span class="food-tray-count" id="detailFoodCount">🍎 0個</span>
+      <span class="food-tray-hint"><span class="arrow">→</span> ピクミンへドラッグで給餌</span>
+    </div>
+    <div class="food-draggable" id="detailFoodDraggable" draggable="true" title="ドラッグして給餌">🍎</div>
+  </div>
   <div class="detail-stage">
     <div class="detail-ground" id="detailGround"></div>
   </div>
@@ -2645,17 +2728,145 @@ function openDetailModal() {
   detailFilter = 'all';
   renderDetailFilters();
   renderDetailGround();
+  renderDetailFoodTray();
   document.getElementById('detailModal').classList.add('active');
 }
 
 function closeDetailModal() {
   document.getElementById('detailModal').classList.remove('active');
+  var ghost = document.getElementById('feedGhost');
+  if (ghost) ghost.parentNode.removeChild(ghost);
+  var ground = document.getElementById('detailGround');
+  if (ground) ground.classList.remove('dragging-food');
 }
 
 function setDetailFilter(f) {
   detailFilter = f;
   renderDetailFilters();
   renderDetailGround();
+}
+
+function renderDetailFoodTray() {
+  var food = state.resources.food;
+  var countEl = document.getElementById('detailFoodCount');
+  var drag = document.getElementById('detailFoodDraggable');
+  if (!countEl || !drag) return;
+  countEl.textContent = '🍎 ' + food + '個';
+  if (food <= 0) {
+    drag.classList.add('empty');
+    drag.setAttribute('draggable', 'false');
+  } else {
+    drag.classList.remove('empty');
+    drag.setAttribute('draggable', 'true');
+  }
+}
+
+function initDetailDragDrop() {
+  var draggable = document.getElementById('detailFoodDraggable');
+  var ground = document.getElementById('detailGround');
+  if (!draggable || !ground) return;
+
+  /* ---- Desktop: HTML5 Drag API ---- */
+  draggable.addEventListener('dragstart', function(e) {
+    if (state.resources.food <= 0) { e.preventDefault(); return; }
+    e.dataTransfer.effectAllowed = 'copy';
+    ground.classList.add('dragging-food');
+  });
+
+  draggable.addEventListener('dragend', function() {
+    ground.classList.remove('dragging-food');
+    ground.querySelectorAll('.detail-pikmin.drag-over').forEach(function(el) {
+      el.classList.remove('drag-over');
+    });
+  });
+
+  ground.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    var target = e.target.closest('.detail-pikmin');
+    ground.querySelectorAll('.detail-pikmin.drag-over').forEach(function(el) {
+      if (el !== target) el.classList.remove('drag-over');
+    });
+    if (target) target.classList.add('drag-over');
+  });
+
+  ground.addEventListener('dragleave', function(e) {
+    var target = e.target.closest('.detail-pikmin');
+    if (target && !target.contains(e.relatedTarget)) {
+      target.classList.remove('drag-over');
+    }
+  });
+
+  ground.addEventListener('drop', function(e) {
+    e.preventDefault();
+    ground.classList.remove('dragging-food');
+    var target = e.target.closest('.detail-pikmin');
+    ground.querySelectorAll('.detail-pikmin.drag-over').forEach(function(el) {
+      el.classList.remove('drag-over');
+    });
+    if (target) {
+      var id = target.getAttribute('data-pikmin-id');
+      if (id) feedPikmin(id);
+    }
+  });
+
+  /* ---- Mobile: Touch Events ---- */
+  var touchGhost = null;
+
+  draggable.addEventListener('touchstart', function(e) {
+    if (state.resources.food <= 0) return;
+    e.preventDefault();
+    var touch = e.touches[0];
+    touchGhost = document.createElement('div');
+    touchGhost.id = 'feedGhost';
+    touchGhost.textContent = '🍎';
+    touchGhost.style.left = (touch.clientX - 24) + 'px';
+    touchGhost.style.top  = (touch.clientY - 32) + 'px';
+    document.body.appendChild(touchGhost);
+    ground.classList.add('dragging-food');
+  }, { passive: false });
+
+  draggable.addEventListener('touchmove', function(e) {
+    if (!touchGhost) return;
+    e.preventDefault();
+    var touch = e.touches[0];
+    touchGhost.style.left = (touch.clientX - 24) + 'px';
+    touchGhost.style.top  = (touch.clientY - 32) + 'px';
+    touchGhost.style.display = 'none';
+    var el = document.elementFromPoint(touch.clientX, touch.clientY);
+    touchGhost.style.display = '';
+    var target = el ? el.closest('.detail-pikmin') : null;
+    ground.querySelectorAll('.detail-pikmin.drag-over').forEach(function(p) {
+      if (p !== target) p.classList.remove('drag-over');
+    });
+    if (target) target.classList.add('drag-over');
+  }, { passive: false });
+
+  draggable.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    ground.classList.remove('dragging-food');
+    var over = ground.querySelector('.detail-pikmin.drag-over');
+    if (over) {
+      over.classList.remove('drag-over');
+      var id = over.getAttribute('data-pikmin-id');
+      if (id) feedPikmin(id);
+    }
+    if (touchGhost) {
+      document.body.removeChild(touchGhost);
+      touchGhost = null;
+    }
+  }, { passive: false });
+
+  draggable.addEventListener('touchcancel', function() {
+    ground.classList.remove('dragging-food');
+    ground.querySelectorAll('.detail-pikmin.drag-over').forEach(function(p) {
+      p.classList.remove('drag-over');
+    });
+    if (touchGhost) {
+      document.body.removeChild(touchGhost);
+      touchGhost = null;
+    }
+  });
 }
 
 function renderDetailFilters() {
@@ -2786,6 +2997,10 @@ function feedPikmin(id) {
   save();
   render();
   if (activePikminId === id) refreshActionSheet(id);
+  if (document.getElementById('detailModal').classList.contains('active')) {
+    renderDetailFoodTray();
+    renderDetailGround();
+  }
 
   // 成長段階が上がったときは特別なトースト
   if (stageBefore !== stageAfter) {
@@ -3203,6 +3418,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 load();
+initDetailDragDrop();
 </script>
 </body>
 </html>
