@@ -1525,8 +1525,11 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const HUNGRY_AFTER_MS = 3 * DAY_MS; // 最終給餌から3日で「お腹すいた」
 const WEAK_AFTER_MS   = 5 * DAY_MS; // 5日で「弱っている」
 const DEAD_AFTER_MS   = 7 * DAY_MS; // 7日で死亡（削除→お墓へ）
-const STAGE_SPROUT_MS = 1 * DAY_MS; // 1日で成体
-const STAGE_FLOWER_MS = 3 * DAY_MS; // 3日で花咲き
+const FEED_TO_BUD    = 1; // 餌1回でつぼみ
+const FEED_TO_FLOWER = 3; // 餌3回で花咲き
+// ※旧データのマイグレーション用に残す（成長段階の時間基準）
+const STAGE_SPROUT_MS = 1 * DAY_MS;
+const STAGE_FLOWER_MS = 3 * DAY_MS;
 const DAILY_PIKMIN_CAP = 5;          // 1日に新規ピクミンとして貰える上限
 const DAILY_FOOD_CAP   = 10;         // 1日に獲得できる餌の上限
 
@@ -1629,6 +1632,7 @@ function migrateFromV1(v1Achievements) {
           lastFedAt: now,  // 移行時は全員お腹満タン
           fromAchievement: a.id,
           diedAt: null,
+          feedCount: FEED_TO_FLOWER, // 移行ピクミンは花咲き状態からスタート
         });
       }
     }
@@ -1668,14 +1672,24 @@ function normalizeState(s) {
       : (a.completed && a.completedAt ? [a.completedAt] : []),
     parentId: a.parentId || null,
   }));
-  merged.pikmin = (s.pikmin || []).map(p => ({
-    id: p.id,
-    type: p.type,
-    bornAt: p.bornAt || Date.now(),
-    lastFedAt: p.lastFedAt || p.bornAt || Date.now(),
-    fromAchievement: p.fromAchievement || null,
-    diedAt: p.diedAt || null,
-  }));
+  merged.pikmin = (s.pikmin || []).map(p => {
+    const bornAt = p.bornAt || Date.now();
+    const age = Date.now() - bornAt;
+    // feedCount がない旧データは、生まれてからの経過時間で推定（移行時は満タン扱い）
+    let feedCount = typeof p.feedCount === 'number' ? p.feedCount
+      : age >= STAGE_FLOWER_MS ? FEED_TO_FLOWER
+      : age >= STAGE_SPROUT_MS ? FEED_TO_BUD
+      : 0;
+    return {
+      id: p.id,
+      type: p.type,
+      bornAt,
+      lastFedAt: p.lastFedAt || bornAt,
+      fromAchievement: p.fromAchievement || null,
+      diedAt: p.diedAt || null,
+      feedCount,
+    };
+  });
   merged.resources = { ...base.resources, ...(s.resources || {}) };
   merged.settings  = { ...base.settings,  ...(s.settings  || {}) };
   return merged;
@@ -1719,10 +1733,10 @@ function pikminState(p) {
   return 'healthy';
 }
 function pikminStage(p) {
-  const age = Date.now() - p.bornAt;
-  if (age >= STAGE_FLOWER_MS) return 'flower';
-  if (age >= STAGE_SPROUT_MS) return 'sprout';
-  return 'seed';
+  const fc = p.feedCount || 0;
+  if (fc >= FEED_TO_FLOWER) return 'flower';
+  if (fc >= FEED_TO_BUD)    return 'sprout'; // 内部名は sprout、表示は「つぼみ」
+  return 'seed';                             // 内部名は seed、表示は「葉っぱ」
 }
 function pikminHungerRatio(p) {
   const since = Date.now() - p.lastFedAt;
@@ -1930,13 +1944,21 @@ function pikminSVG(type, size = 38, opts = {}) {
       <circle cx="17.5" cy="14" r="3" fill="${petal}" opacity="0.95"/>
       <circle cx="22.5" cy="14" r="3" fill="${petal}" opacity="0.95"/>
       <circle cx="20" cy="10" r="2" fill="#FFF9C4" stroke="#F57F17" stroke-width="0.4"/>`;
+  } else if (stage === 'sprout') {
+    // つぼみ：閉じた花芽（卵形のガクに包まれた蕾）
+    topping = `
+      <ellipse cx="20" cy="8" rx="5" ry="7" fill="#66BB6A" stroke="#388E3C" stroke-width="0.8"/>
+      <ellipse cx="20" cy="6" rx="3.5" ry="4.5" fill="#A5D6A7"/>
+      <ellipse cx="20" cy="5" rx="2" ry="2" fill="#C8E6C9"/>
+      <path d="M 15.5 11 Q 18 9 20 14" stroke="#388E3C" stroke-width="0.8" fill="none"/>
+      <path d="M 24.5 11 Q 22 9 20 14" stroke="#388E3C" stroke-width="0.8" fill="none"/>`;
   } else if (stage === 'seed') {
-    // 芽：小さい葉1枚
+    // 葉っぱ：小さい葉1枚（生まれたて）
     topping = `
       <ellipse cx="22" cy="10" rx="5" ry="3" fill="#81C784" transform="rotate(-15 22 10)"/>
       <path d="M 20 14 Q 22 12 25 9" stroke="#2d6a3e" stroke-width="0.4" fill="none"/>`;
   } else {
-    // 通常の葉（sprout）
+    // 花（flower）：5枚花びら ※ stage==='flower'のブロックより後に来ないようにelse扱い
     topping = `
       <ellipse cx="22" cy="8" rx="9" ry="5" fill="#66BB6A" transform="rotate(-15 22 8)"/>
       <ellipse cx="22" cy="8" rx="6" ry="3" fill="#81C784" transform="rotate(-15 22 8)"/>
@@ -2389,7 +2411,7 @@ function renderGarden() {
   }
 }
 
-function stageLabel(s) { return s === 'seed' ? '幼体' : s === 'sprout' ? '成体' : '花咲き'; }
+function stageLabel(s) { return s === 'seed' ? '葉っぱ' : s === 'sprout' ? 'つぼみ' : '花'; }
 function stateLabel(s) {
   return s === 'healthy' ? '健康' : s === 'hungry' ? 'お腹すいた' : s === 'weak' ? '弱ってる' : '天に';
 }
@@ -2709,6 +2731,23 @@ function refreshActionSheet(id) {
   document.getElementById('actionPikminMeta').textContent =
     `${stageLabel(stg)} ・ ${stateLabel(st)} ・ ${Math.floor(pikminAgeDays(p))}日目`;
 
+  // 成長進捗
+  const fc = p.feedCount || 0;
+  let growthHint = '';
+  let growthPct = 0;
+  if (stg === 'seed') {
+    const need = FEED_TO_BUD - fc;
+    growthHint = `🌿→🌼 あと${need}回でつぼみ`;
+    growthPct = Math.round((fc / FEED_TO_BUD) * 100);
+  } else if (stg === 'sprout') {
+    const need = FEED_TO_FLOWER - fc;
+    growthHint = `🌼→🌸 あと${need}回で花咲き！`;
+    growthPct = Math.round(((fc - FEED_TO_BUD) / (FEED_TO_FLOWER - FEED_TO_BUD)) * 100);
+  } else {
+    growthHint = `🌸 満開！`;
+    growthPct = 100;
+  }
+
   // お腹バー（0=空腹極限、100=満腹）
   const hungerPercent = Math.round((1 - pikminHungerRatio(p)) * 100);
   const cls = hungerPercent >= 60 ? 'full' : hungerPercent >= 30 ? 'hungry' : 'starving';
@@ -2717,6 +2756,11 @@ function refreshActionSheet(id) {
       <span class="label">お腹</span>
       <div class="bar-bg"><div class="bar-fg ${cls}" style="width:${hungerPercent}%"></div></div>
       <span>${hungerPercent}%</span>
+    </div>
+    <div class="bar-row">
+      <span class="label">成長</span>
+      <div class="bar-bg"><div class="bar-fg full" style="width:${growthPct}%;background:linear-gradient(90deg,#AED581,#FDD835)"></div></div>
+      <span style="font-size:0.85em;color:#555;">${growthHint}</span>
     </div>`;
 
   document.getElementById('actionFoodCount').textContent = state.resources.food;
@@ -2731,12 +2775,31 @@ function feedPikmin(id) {
     showToast('🍎 餌が足りません。実績を達成しよう！');
     return;
   }
+
+  const stageBefore = pikminStage(p);
   state.resources.food--;
   p.lastFedAt = Date.now();
+  if (typeof p.feedCount !== 'number') p.feedCount = 0;
+  p.feedCount++;
+  const stageAfter = pikminStage(p);
+
   save();
   render();
   if (activePikminId === id) refreshActionSheet(id);
-  showToast(`🍎 ${PIKMIN_TYPES[p.type].name}はお腹いっぱい！`);
+
+  // 成長段階が上がったときは特別なトースト
+  if (stageBefore !== stageAfter) {
+    const pt = PIKMIN_TYPES[p.type];
+    if (stageAfter === 'sprout') {
+      showToast(`🌼 ${pt.name}がつぼみになった！`);
+      fireConfetti(pt.color);
+    } else if (stageAfter === 'flower') {
+      showToast(`🌸 ${pt.name}に花が咲いた！！`);
+      fireConfetti(pt.color);
+    }
+  } else {
+    showToast(`🍎 ${PIKMIN_TYPES[p.type].name}はお腹いっぱい！`);
+  }
 }
 
 function petPikmin(id) {
@@ -2804,6 +2867,7 @@ function toggle(id) {
       lastFedAt: Date.now(),
       fromAchievement: a.id,
       diedAt: null,
+      feedCount: 0,
     });
     r.todayPikmin++;
     bornOne = true;
