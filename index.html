@@ -336,6 +336,31 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 
 .pikmin.new { animation: spawn 0.6s ease-out, bounce 2s ease-in-out 0.6s infinite; }
 
+/* クリックしたときのぴょんっリアクション */
+@keyframes pikmin-poke {
+  0%   { transform: translateY(0) scale(1) rotate(0); }
+  25%  { transform: translateY(-18px) scale(1.2) rotate(-8deg); }
+  50%  { transform: translateY(0) scale(0.95) rotate(5deg); }
+  75%  { transform: translateY(-6px) scale(1.05) rotate(-3deg); }
+  100% { transform: translateY(0) scale(1) rotate(0); }
+}
+.pikmin.poked, .detail-pikmin.poked {
+  animation: pikmin-poke 0.6s ease-out !important;
+}
+
+/* クリック時のキラキラエフェクト */
+.poke-spark {
+  position: absolute;
+  pointer-events: none;
+  font-size: 18px;
+  animation: poke-spark 0.6s ease-out forwards;
+  z-index: 100;
+}
+@keyframes poke-spark {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(var(--tx, 0), var(--ty, -30px)) scale(1.2); opacity: 0; }
+}
+
 /* 実績 */
 .achievements-header {
   display: flex;
@@ -687,6 +712,41 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 
 .btn-reset:hover { background: rgba(239, 83, 80, 0.1); border-color: #EF5350; color: #EF5350; }
 
+/* カスタム確認モーダル */
+.confirm-content { max-width: 420px; }
+.confirm-message {
+  color: #444;
+  font-size: 1.05em;
+  line-height: 1.6;
+  text-align: center;
+  margin: 10px 0 12px;
+  white-space: pre-line;
+}
+.confirm-warning {
+  background: #FFF3E0;
+  border: 2px solid #FFB74D;
+  color: #E65100;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 0.95em;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.confirm-ok.danger {
+  background: linear-gradient(135deg, #EF5350, #B71C1C);
+}
+
+/* キーボード操作: focus-visible スタイル */
+button:focus-visible,
+.pikmin-option:focus-visible,
+.filter-btn:focus-visible,
+[data-action]:focus-visible {
+  outline: 3px solid #FFD54F;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(255, 213, 79, 0.3);
+}
+
 @media (max-width: 600px) {
   header h1 { font-size: 1.8em; }
   .achievement-card { flex-direction: column; align-items: stretch; }
@@ -723,7 +783,7 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
   <section class="garden">
     <div class="garden-header">
       <h2 class="section-title">🏡 ピクミンガーデン</h2>
-      <button class="btn-detail" onclick="openDetailModal()">🔍 詳しく見る</button>
+      <button class="btn-detail" data-action="open-detail">🔍 詳しく見る</button>
     </div>
     <div class="pikmin-area" id="pikminArea"></div>
   </section>
@@ -731,18 +791,18 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
   <section class="achievements">
     <div class="achievements-header">
       <h2 class="section-title">📋 実績リスト</h2>
-      <button class="btn-add" onclick="openModal()">＋ 実績を追加</button>
+      <button class="btn-add" data-action="open-add">＋ 実績を追加</button>
     </div>
     <div class="filter-bar">
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">すべて</button>
-      <button class="filter-btn" data-filter="active" onclick="setFilter('active')">未達成</button>
-      <button class="filter-btn" data-filter="completed" onclick="setFilter('completed')">達成済み</button>
+      <button class="filter-btn active" data-action="filter" data-filter="all">すべて</button>
+      <button class="filter-btn" data-action="filter" data-filter="active">未達成</button>
+      <button class="filter-btn" data-action="filter" data-filter="completed">達成済み</button>
     </div>
     <div id="achievementsList"></div>
   </section>
 
   <div class="footer">
-    <button class="btn-reset" onclick="resetAll()">🔄 すべてリセット</button>
+    <button class="btn-reset" data-action="reset-all">🔄 すべてリセット</button>
   </div>
 </div>
 
@@ -767,8 +827,8 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
       <input type="number" id="achCount" min="1" max="50" value="3">
     </div>
     <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
-      <button class="btn-save" onclick="saveAchievement()">保存</button>
+      <button class="btn-cancel" data-action="close-modal">キャンセル</button>
+      <button class="btn-save" data-action="save-achievement">保存</button>
     </div>
   </div>
 </div>
@@ -778,7 +838,7 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
   <div class="detail-header">
     <h2>🏡 ピクミンガーデン詳細</h2>
     <span class="detail-counter" id="detailCounter">合計 0匹</span>
-    <button class="btn-close-detail" onclick="closeDetailModal()">✕</button>
+    <button class="btn-close-detail" data-action="close-detail">✕</button>
   </div>
   <div class="detail-filters" id="detailFilters"></div>
   <div class="detail-stage">
@@ -786,7 +846,20 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- 確認モーダル（削除・リセット・戻す用） -->
+<div class="modal" id="confirmModal" aria-labelledby="confirmTitle" role="dialog" aria-modal="true">
+  <div class="modal-content confirm-content">
+    <h3 id="confirmTitle">確認</h3>
+    <p id="confirmMessage" class="confirm-message"></p>
+    <div id="confirmWarning" class="confirm-warning" hidden></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-action="confirm-cancel">キャンセル</button>
+      <button class="btn-save confirm-ok" id="confirmOkBtn" data-action="confirm-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 // スマホ判定（軽量化用）
@@ -1016,10 +1089,23 @@ function pikminSVG(type, size = 38) {
   </svg>`;
 }
 
+// 文字列を安定した整数ハッシュに変換（決定的な擬似ランダム並び替えに使用）
+function hashCode(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h;
+}
+
 function getAllEarnedPikmin() {
   const result = [];
   achievements.filter(a => a.completed).forEach(a => {
-    for (let i = 0; i < a.pikminCount; i++) result.push(a.pikminType);
+    for (let i = 0; i < a.pikminCount; i++) {
+      const key = `${a.id}-${i}`;
+      result.push({ type: a.pikminType, key, sortKey: hashCode(key) });
+    }
   });
   return result;
 }
@@ -1055,10 +1141,12 @@ function renderGarden() {
     return;
   }
 
-  pikmin.sort(() => Math.random() - 0.5);
-  area.innerHTML = pikmin.map((type, i) =>
-    `<div class="pikmin" style="animation-delay: ${(i % 12) * 0.1}s" title="${PIKMIN_TYPES[type].name}">
-      ${pikminSVG(type)}
+  // 安定した擬似ランダム並び（keyのハッシュで決定的にシャッフル）
+  // 毎回ランダムにしないことで「さっき見た子」を見失わない
+  pikmin.sort((a, b) => a.sortKey - b.sortKey);
+  area.innerHTML = pikmin.map((p, i) =>
+    `<div class="pikmin" data-pikmin-key="${esc(p.key)}" style="animation-delay: ${(i % 12) * 0.1}s" title="${PIKMIN_TYPES[p.type].name}">
+      ${pikminSVG(p.type)}
     </div>`
   ).join('');
 }
@@ -1088,10 +1176,10 @@ function renderAchievements() {
       </div>
       <div class="achievement-actions">
         ${a.completed
-          ? `<button class="btn btn-uncomplete" onclick="toggle('${a.id}')">↩ 戻す</button>`
-          : `<button class="btn btn-complete" onclick="toggle('${a.id}')">✓ 達成！</button>`}
-        <button class="btn btn-edit" onclick="edit('${a.id}')">✎ 編集</button>
-        <button class="btn btn-delete" onclick="del('${a.id}')">🗑 削除</button>
+          ? `<button class="btn btn-uncomplete" data-action="toggle" data-id="${esc(a.id)}">↩ 戻す</button>`
+          : `<button class="btn btn-complete" data-action="toggle" data-id="${esc(a.id)}">✓ 達成！</button>`}
+        <button class="btn btn-edit" data-action="edit" data-id="${esc(a.id)}">✎ 編集</button>
+        <button class="btn btn-delete" data-action="delete" data-id="${esc(a.id)}">🗑 削除</button>
       </div>
     </div>`;
   }).join('');
@@ -1109,7 +1197,7 @@ function renderPikminSelector() {
   const sel = document.getElementById('pikminSelector');
   sel.innerHTML = Object.keys(PIKMIN_TYPES).map(type => {
     const p = PIKMIN_TYPES[type];
-    return `<div class="pikmin-option${type === selectedType ? ' selected' : ''}" data-type="${type}" onclick="selectPikminType('${type}')">
+    return `<div class="pikmin-option${type === selectedType ? ' selected' : ''}" data-action="select-pikmin" data-type="${type}">
       ${pikminSVG(type, 28)}${p.name.replace('ピクミン', '')}
     </div>`;
   }).join('');
@@ -1186,7 +1274,7 @@ function renderBgPikmin() {
   const animations = ['walk-1', 'walk-2', 'walk-3', 'walk-4', 'walk-5'];
   const frag = document.createDocumentFragment();
 
-  sample.forEach((type, i) => {
+  sample.forEach((p, i) => {
     const div = document.createElement('div');
     div.className = 'bg-pikmin';
     const anim = animations[i % animations.length];
@@ -1205,7 +1293,7 @@ function renderBgPikmin() {
       animation: ${animCSS};
       animation-delay: ${delay}s, ${Math.random() * 2}s;
     `;
-    div.innerHTML = pikminSVG(type, size);
+    div.innerHTML = pikminSVG(p.type, size);
     frag.appendChild(div);
   });
 
@@ -1235,17 +1323,17 @@ function setDetailFilter(f) {
 function renderDetailFilters() {
   const pikmin = getAllEarnedPikmin();
   const counts = {};
-  pikmin.forEach(t => counts[t] = (counts[t] || 0) + 1);
+  pikmin.forEach(p => counts[p.type] = (counts[p.type] || 0) + 1);
 
   const container = document.getElementById('detailFilters');
-  let html = `<button class="detail-filter-btn ${detailFilter === 'all' ? 'active' : ''}" onclick="setDetailFilter('all')">
+  let html = `<button class="detail-filter-btn ${detailFilter === 'all' ? 'active' : ''}" data-action="detail-filter" data-filter="all">
     🌱 すべて (${pikmin.length})
   </button>`;
 
   for (const type in PIKMIN_TYPES) {
     if (!counts[type]) continue;
     const p = PIKMIN_TYPES[type];
-    html += `<button class="detail-filter-btn ${detailFilter === type ? 'active' : ''}" onclick="setDetailFilter('${type}')">
+    html += `<button class="detail-filter-btn ${detailFilter === type ? 'active' : ''}" data-action="detail-filter" data-filter="${type}">
       ${p.emoji} ${p.name} (${counts[type]})
     </button>`;
   }
@@ -1257,7 +1345,9 @@ function renderDetailGround() {
   const counter = document.getElementById('detailCounter');
 
   let pikmin = getAllEarnedPikmin();
-  if (detailFilter !== 'all') pikmin = pikmin.filter(t => t === detailFilter);
+  if (detailFilter !== 'all') pikmin = pikmin.filter(p => p.type === detailFilter);
+  // 詳細ビューも安定順にソート
+  pikmin.sort((a, b) => a.sortKey - b.sortKey);
 
   counter.textContent = `${detailFilter === 'all' ? '合計' : PIKMIN_TYPES[detailFilter].name} ${pikmin.length}匹`;
 
@@ -1266,9 +1356,9 @@ function renderDetailGround() {
     return;
   }
 
-  ground.innerHTML = pikmin.map((type, i) =>
-    `<div class="detail-pikmin" style="animation-delay: ${(i % 20) * 0.08}s" title="${PIKMIN_TYPES[type].name}">
-      ${pikminSVG(type, 80)}
+  ground.innerHTML = pikmin.map((p, i) =>
+    `<div class="detail-pikmin" data-pikmin-key="${esc(p.key)}" style="animation-delay: ${(i % 20) * 0.08}s" title="${PIKMIN_TYPES[p.type].name}">
+      ${pikminSVG(p.type, 80)}
     </div>`
   ).join('');
 }
@@ -1281,14 +1371,32 @@ function selectPikminType(type) { selectedType = type; renderPikminSelector(); }
 function toggle(id) {
   const a = achievements.find(x => x.id === id);
   if (!a) return;
-  a.completed = !a.completed;
-  save();
-  render();
+
+  // 達成済み→未達成（戻す）のときは、何匹消えるかを確認
   if (a.completed) {
     const p = PIKMIN_TYPES[a.pikminType];
-    showToast(`🎉 ${p.emoji} ${p.name}を ${a.pikminCount}匹 ゲット！`);
-    fireConfetti(p.color);
+    customConfirm({
+      title: '実績を戻しますか？',
+      message: `「${a.title}」を未達成に戻します。`,
+      warning: `⚠ ${p.emoji} ${p.name} ${a.pikminCount}匹 がガーデンから消えます`,
+      okText: '戻す',
+      danger: true,
+      onOk: () => {
+        a.completed = false;
+        save(); render();
+        showToast(`↩ ${p.name} ${a.pikminCount}匹が去りました`);
+      }
+    });
+    return;
   }
+
+  // 未達成→達成 のときは即実行
+  a.completed = true;
+  save();
+  render();
+  const p = PIKMIN_TYPES[a.pikminType];
+  showToast(`🎉 ${p.emoji} ${p.name}を ${a.pikminCount}匹 ゲット！`);
+  fireConfetti(p.color);
 }
 
 function openModal(id) {
@@ -1308,7 +1416,10 @@ function openModal(id) {
   }
   renderPikminSelector();
   document.getElementById('modal').classList.add('active');
-  setTimeout(() => document.getElementById('achTitle').focus(), 100);
+  // requestAnimationFrame 2回ネスト: モーダル描画直後に確実にフォーカス
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('achTitle').focus();
+  }));
 }
 
 function closeModal() { document.getElementById('modal').classList.remove('active'); editingId = null; }
@@ -1318,7 +1429,11 @@ function saveAchievement() {
   const desc = document.getElementById('achDesc').value.trim();
   const count = Math.max(1, Math.min(50, parseInt(document.getElementById('achCount').value) || 1));
 
-  if (!title) { alert('タイトルを入力してください'); return; }
+  if (!title) {
+    showToast('⚠ タイトルを入力してください');
+    document.getElementById('achTitle').focus();
+    return;
+  }
 
   if (editingId) {
     const a = achievements.find(x => x.id === editingId);
@@ -1339,11 +1454,22 @@ function edit(id) { openModal(id); }
 function del(id) {
   const a = achievements.find(x => x.id === id);
   if (!a) return;
-  if (confirm(`「${a.title}」を削除しますか？`)) {
-    achievements = achievements.filter(x => x.id !== id);
-    save(); render();
-    showToast('🗑 実績を削除しました');
-  }
+  const p = PIKMIN_TYPES[a.pikminType];
+  const warning = a.completed
+    ? `⚠ ${p.emoji} ${p.name} ${a.pikminCount}匹 がガーデンから消えます`
+    : '';
+  customConfirm({
+    title: '実績を削除しますか？',
+    message: `「${a.title}」を削除します。\nこの操作は元に戻せません。`,
+    warning,
+    okText: '削除する',
+    danger: true,
+    onOk: () => {
+      achievements = achievements.filter(x => x.id !== id);
+      save(); render();
+      showToast('🗑 実績を削除しました');
+    }
+  });
 }
 
 function setFilter(f) {
@@ -1355,11 +1481,48 @@ function setFilter(f) {
 }
 
 function resetAll() {
-  if (confirm('本当にすべての進捗と実績をリセットしますか？\nこの操作は元に戻せません。')) {
-    achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
-    save(); render();
-    showToast('🔄 リセットしました');
+  const total = achievements.filter(a => a.completed)
+    .reduce((sum, a) => sum + a.pikminCount, 0);
+  customConfirm({
+    title: 'すべてリセットしますか？',
+    message: '実績と進捗をすべて初期状態に戻します。\nこの操作は元に戻せません。',
+    warning: total > 0 ? `⚠ 現在のピクミン ${total}匹 がすべて消えます` : '',
+    okText: 'リセット',
+    danger: true,
+    onOk: () => {
+      achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
+      save(); render();
+      showToast('🔄 リセットしました');
+    }
+  });
+}
+
+/* ============================================= */
+/* カスタム確認モーダル（native confirm の代替）   */
+/* ============================================= */
+let _confirmOnOk = null;
+function customConfirm({ title, message, warning, okText = 'OK', danger = false, onOk }) {
+  document.getElementById('confirmTitle').textContent = title || '確認';
+  document.getElementById('confirmMessage').textContent = message || '';
+  const warnEl = document.getElementById('confirmWarning');
+  if (warning) {
+    warnEl.textContent = warning;
+    warnEl.hidden = false;
+  } else {
+    warnEl.hidden = true;
   }
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okText;
+  okBtn.classList.toggle('danger', !!danger);
+  _confirmOnOk = onOk || null;
+  document.getElementById('confirmModal').classList.add('active');
+  requestAnimationFrame(() => requestAnimationFrame(() => okBtn.focus()));
+}
+function closeConfirmModal(runOk) {
+  document.getElementById('confirmModal').classList.remove('active');
+  const cb = _confirmOnOk;
+  _confirmOnOk = null;
+  if (runOk && cb) cb();
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
@@ -1373,8 +1536,11 @@ function showToast(msg) {
 }
 
 function fireConfetti(mainColor) {
+  // モバイル/reduced-motion時は紙吹雪を減らす
+  const COUNT = (IS_MOBILE || IS_REDUCED_MOTION) ? 18 : 40;
   const colors = [mainColor, '#FFD54F', '#FF7043', '#66BB6A', '#42A5F5', '#AB47BC'];
-  for (let i = 0; i < 40; i++) {
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < COUNT; i++) {
     const c = document.createElement('div');
     c.className = 'confetti';
     c.style.left = Math.random() * 100 + '%';
@@ -1385,19 +1551,100 @@ function fireConfetti(mainColor) {
     c.style.animationDelay = (Math.random() * 0.3) + 's';
     c.style.transform = `rotate(${Math.random() * 360}deg)`;
     c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 4000);
+    // animationend で確実に除去（setTimeoutだと取りこぼし＆タブ非表示時に溜まる）
+    c.addEventListener('animationend', () => c.remove(), { once: true });
+    // フォールバック: 万一animationendが発火しない場合でも掃除
+    setTimeout(() => { if (c.isConnected) c.remove(); }, 6000);
+    frag.appendChild(c);
+  }
+  document.body.appendChild(frag);
+}
+
+/* ============================================= */
+/* ピクミンクリック時のぴょん！リアクション         */
+/* ============================================= */
+const POKE_EMOJIS = ['✨', '💫', '🌟', '💕', '🍃', '🌱'];
+function pokePikmin(el) {
+  if (!el || el.classList.contains('poked')) return;
+  el.classList.add('poked');
+  el.addEventListener('animationend', () => el.classList.remove('poked'), { once: true });
+
+  // キラキラエフェクト（2〜3個飛ぶ）
+  const n = 2 + Math.floor(Math.random() * 2);
+  const rect = el.getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div');
+    s.className = 'poke-spark';
+    s.textContent = POKE_EMOJIS[Math.floor(Math.random() * POKE_EMOJIS.length)];
+    s.style.left = (rect.left + rect.width / 2) + 'px';
+    s.style.top = (rect.top + rect.height / 3) + 'px';
+    s.style.setProperty('--tx', (-30 + Math.random() * 60) + 'px');
+    s.style.setProperty('--ty', (-40 - Math.random() * 20) + 'px');
+    s.addEventListener('animationend', () => s.remove(), { once: true });
+    document.body.appendChild(s);
   }
 }
 
+/* ============================================= */
+/* イベント委譲（全クリックをここで捌く）           */
+/* ============================================= */
+document.addEventListener('click', e => {
+  // ピクミンをクリック（ぴょん！リアクション）
+  const pkm = e.target.closest('.pikmin, .detail-pikmin');
+  if (pkm) { pokePikmin(pkm); return; }
+
+  // data-action を持つ要素を探す
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  const id = el.dataset.id;
+  const filter = el.dataset.filter;
+  const type = el.dataset.type;
+
+  switch (action) {
+    // 上部ボタン類
+    case 'open-detail':       openDetailModal(); break;
+    case 'close-detail':      closeDetailModal(); break;
+    case 'open-add':          openModal(); break;
+    case 'reset-all':         resetAll(); break;
+
+    // 実績カード
+    case 'toggle':            toggle(id); break;
+    case 'edit':              openModal(id); break;
+    case 'delete':            del(id); break;
+
+    // フィルター
+    case 'filter':            setFilter(filter); break;
+    case 'detail-filter':     setDetailFilter(filter); break;
+
+    // 実績追加/編集モーダル
+    case 'close-modal':       closeModal(); break;
+    case 'save-achievement':  saveAchievement(); break;
+    case 'select-pikmin':     selectPikminType(type); break;
+
+    // カスタム確認モーダル
+    case 'confirm-ok':        closeConfirmModal(true); break;
+    case 'confirm-cancel':    closeConfirmModal(false); break;
+  }
+});
+
+// モーダル背景クリックで閉じる
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target.id === 'modal') closeModal();
+});
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target.id === 'confirmModal') closeConfirmModal(false);
 });
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
+    closeConfirmModal(false);
     closeModal();
     closeDetailModal();
+  } else if (e.key === 'Enter' && document.getElementById('confirmModal').classList.contains('active')) {
+    // 確認モーダルが開いているとき、Enterで確定
+    e.preventDefault();
+    closeConfirmModal(true);
   }
 });
 
