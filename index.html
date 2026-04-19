@@ -1025,6 +1025,261 @@ button:focus-visible,
   line-height: 1.5;
 }
 
+/* ============================================= */
+/* オリマーアドバイザー                            */
+/* ============================================= */
+.olimar-banner {
+  background: rgba(255,255,255,0.92);
+  border: 2px solid rgba(30,136,229,0.25);
+  border-radius: 18px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.olimar-banner:hover { transform: translateY(-2px); box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
+.olimar-portrait { flex-shrink: 0; }
+.olimar-bubble {
+  flex: 1;
+  background: #F0F8FF;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.88em;
+  color: #1A1A1A;
+  line-height: 1.55;
+  position: relative;
+}
+.olimar-bubble::before {
+  content: '';
+  position: absolute;
+  left: -10px; top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #F0F8FF;
+}
+.olimar-label {
+  font-size: 0.72em;
+  color: #1976D2;
+  font-weight: bold;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.olimar-msg { font-weight: bold; color: #1a1a1a; font-size: 0.95em; }
+.olimar-journal-btn {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1E88E5, #1565C0);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 9px 13px;
+  font-size: 0.82em;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.olimar-journal-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(21,101,192,0.4); }
+
+/* ============================================= */
+/* 振り返りジャーナルモーダル                      */
+/* ============================================= */
+.journal-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.journal-modal.active { display: flex; }
+.journal-content {
+  background: white;
+  border-radius: 22px;
+  max-width: 600px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+  margin: auto;
+}
+.journal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #F0F0F0;
+}
+.journal-header h2 { flex: 1; font-size: 1.1em; color: #222; }
+.journal-close {
+  background: #F5F5F5;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 0.88em;
+  font-weight: bold;
+  color: #666;
+}
+.journal-section-title {
+  font-size: 0.88em;
+  font-weight: bold;
+  color: #666;
+  margin: 18px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.journal-summary {
+  background: linear-gradient(135deg, #EFF8FF, #E3F2FD);
+  border: 1.5px solid #90CAF9;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  font-size: 0.9em;
+  color: #1A1A1A;
+  line-height: 1.7;
+}
+
+/* ヒートマップ */
+.heatmap-row { margin-bottom: 12px; }
+.heatmap-title {
+  font-size: 0.83em;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.resistant-badge {
+  background: #FFCDD2;
+  color: #C62828;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+.streak-badge {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.75em;
+  font-weight: bold;
+}
+.heatmap-cells { display: flex; gap: 2px; flex-wrap: nowrap; overflow-x: auto; }
+.heatmap-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #EEEEEE;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.heatmap-cell.done { background: #66BB6A; }
+.heatmap-cell.done-recent { background: #43A047; }
+.heatmap-cell.today { outline: 2px solid #1E88E5; outline-offset: 1px; }
+.heatmap-stats {
+  font-size: 0.72em;
+  color: #999;
+  margin-top: 3px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.heatmap-stats .warn { color: #E53935; font-weight: bold; }
+
+/* ============================================= */
+/* 実績カードの抵抗感バッジ＋ステップダウン        */
+/* ============================================= */
+.achievement-card.resistant { border-left: 4px solid #EF5350; }
+.achievement-rate {
+  font-size: 0.75em;
+  color: #999;
+  margin-top: 3px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.btn-stepdown {
+  background: rgba(239,83,80,0.1);
+  border: 1.5px solid #EF5350;
+  color: #C62828;
+  border-radius: 12px;
+  padding: 5px 12px;
+  font-size: 0.8em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-stepdown:hover { background: rgba(239,83,80,0.2); transform: translateY(-1px); }
+
+/* ============================================= */
+/* ステップダウン提案モーダル                      */
+/* ============================================= */
+.stepdown-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1300;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.stepdown-modal.active { display: flex; }
+.stepdown-content {
+  background: white;
+  border-radius: 22px;
+  max-width: 420px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+.stepdown-olimar {
+  text-align: center;
+  margin-bottom: 12px;
+}
+.stepdown-speech {
+  background: linear-gradient(135deg, #EFF8FF, #E3F2FD);
+  border: 1.5px solid #90CAF9;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 0.92em;
+  color: #1565C0;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.55;
+}
+.stepdown-suggestion {
+  background: #F9FBE7;
+  border: 2px solid #C5E1A5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+.stepdown-suggestion .suggest-label {
+  font-size: 0.75em;
+  color: #558B2F;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.stepdown-suggestion .suggest-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #33691E;
+}
+
 @media (max-width: 600px) {
   header h1 { font-size: 1.8em; }
   .achievement-card { flex-direction: column; align-items: stretch; }
@@ -1035,6 +1290,9 @@ button:focus-visible,
   .period-tabs { width: 100%; justify-content: space-between; }
   .period-btn { flex: 1; }
   .resource-bar { font-size: 0.85em; }
+  .olimar-banner { flex-wrap: wrap; }
+  .olimar-journal-btn { width: 100%; text-align: center; }
+  .heatmap-cell { width: 11px; height: 11px; }
 }
 </style>
 </head>
@@ -1057,6 +1315,16 @@ button:focus-visible,
       </span>
     </div>
   </header>
+
+  <!-- オリマー船長アドバイザーバナー -->
+  <div class="olimar-banner" id="olimarBanner" data-action="open-journal" role="button" tabindex="0" aria-label="オリマーのアドバイス・振り返りを開く">
+    <div class="olimar-portrait" id="olimarPortrait"></div>
+    <div class="olimar-bubble">
+      <div class="olimar-label">🧑‍🚀 オリマー船長</div>
+      <div class="olimar-msg" id="olimarMsg">読み込み中…</div>
+    </div>
+    <button class="olimar-journal-btn" data-action="open-journal">📅 振り返り</button>
+  </div>
 
   <div class="progress-container">
     <div class="progress-header">
@@ -1187,6 +1455,39 @@ button:focus-visible,
   </div>
 </div>
 
+<!-- 振り返りジャーナルモーダル -->
+<div class="journal-modal" id="journalModal" role="dialog" aria-modal="true" aria-label="振り返りジャーナル">
+  <div class="journal-content">
+    <div class="journal-header">
+      <div id="journalOlimarPortrait"></div>
+      <h2>📅 振り返りジャーナル</h2>
+      <button class="journal-close" data-action="close-journal">✕ 閉じる</button>
+    </div>
+    <div id="journalBody"></div>
+  </div>
+</div>
+
+<!-- ステップダウン提案モーダル -->
+<div class="stepdown-modal" id="stepdownModal" role="dialog" aria-modal="true" aria-label="目標ハードルを下げる">
+  <div class="stepdown-content">
+    <div class="stepdown-olimar" id="stepdownOlimar"></div>
+    <div class="stepdown-speech" id="stepdownSpeech"></div>
+    <div class="stepdown-suggestion" id="stepdownSuggestion"></div>
+    <div class="form-group" style="margin-top:12px;">
+      <label>🎯 新しいタイトル</label>
+      <input type="text" id="stepdownTitle" maxlength="50" placeholder="一段下げた目標">
+    </div>
+    <div class="form-group">
+      <label>📝 説明（任意）</label>
+      <textarea id="stepdownDesc" rows="2" maxlength="200"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" data-action="close-stepdown">キャンセル</button>
+      <button class="btn-save" data-action="apply-stepdown">この目標で追加</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -1207,14 +1508,14 @@ const PIKMIN_TYPES = {
 };
 
 const DEFAULT_ACHIEVEMENTS = [
-  { id: 'd1', title: 'はじめの一歩',   desc: 'アプリを開いた',         pikminType: 'red',    foodReward: 3, completed: false, completedAt: null },
-  { id: 'd2', title: '早起きチャレンジ', desc: '朝6時までに起きた',       pikminType: 'yellow', foodReward: 5, completed: false, completedAt: null },
-  { id: 'd3', title: '集中勉強',       desc: '1時間集中して勉強した',   pikminType: 'blue',   foodReward: 3, completed: false, completedAt: null },
-  { id: 'd4', title: '運動する',       desc: '30分以上運動した',        pikminType: 'purple', foodReward: 4, completed: false, completedAt: null },
-  { id: 'd5', title: '本を読む',       desc: '本を30分読んだ',          pikminType: 'white',  foodReward: 3, completed: false, completedAt: null },
-  { id: 'd6', title: 'お部屋キレイ',   desc: '自分の部屋を掃除した',    pikminType: 'rock',   foodReward: 2, completed: false, completedAt: null },
-  { id: 'd7', title: '深呼吸・瞑想',   desc: '5分間瞑想した',           pikminType: 'ice',    foodReward: 2, completed: false, completedAt: null },
-  { id: 'd8', title: '新しい挑戦',     desc: '初めてのことをやってみた', pikminType: 'winged', foodReward: 5, completed: false, completedAt: null }
+  { id: 'd1', title: 'はじめの一歩',   desc: 'アプリを開いた',         pikminType: 'red',    foodReward: 3, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd2', title: '早起きチャレンジ', desc: '朝6時までに起きた',       pikminType: 'yellow', foodReward: 5, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd3', title: '集中勉強',       desc: '1時間集中して勉強した',   pikminType: 'blue',   foodReward: 3, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd4', title: '運動する',       desc: '30分以上運動した',        pikminType: 'purple', foodReward: 4, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd5', title: '本を読む',       desc: '本を30分読んだ',          pikminType: 'white',  foodReward: 3, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd6', title: 'お部屋キレイ',   desc: '自分の部屋を掃除した',    pikminType: 'rock',   foodReward: 2, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd7', title: '深呼吸・瞑想',   desc: '5分間瞑想した',           pikminType: 'ice',    foodReward: 2, completed: false, completedAt: null, completionLog: [], parentId: null },
+  { id: 'd8', title: '新しい挑戦',     desc: '初めてのことをやってみた', pikminType: 'winged', foodReward: 5, completed: false, completedAt: null, completionLog: [], parentId: null }
 ];
 
 /* ============================================= */
@@ -1362,6 +1663,10 @@ function normalizeState(s) {
     foodReward: Math.max(1, Math.min(10, a.foodReward || a.pikminCount || 3)),
     completed: !!a.completed,
     completedAt: a.completedAt || (a.completed ? Date.now() : null),
+    // completionLog: 既存データは completedAt を種として復元（最大1件）
+    completionLog: Array.isArray(a.completionLog) ? a.completionLog
+      : (a.completed && a.completedAt ? [a.completedAt] : []),
+    parentId: a.parentId || null,
   }));
   merged.pikmin = (s.pikmin || []).map(p => ({
     id: p.id,
@@ -1431,11 +1736,165 @@ function alivePikmin() { return state.pikmin.filter(p => !p.diedAt); }
 function deadPikmin()  { return state.pikmin.filter(p => p.diedAt); }
 
 /* ============================================= */
+/* オリマー SVG（キャプテン・オリマーの顔）       */
+/* ============================================= */
+function olimarSVG(size) {
+  size = size || 56;
+  var h = Math.round(size * 76 / 60);
+  return '<svg viewBox="0 0 60 76" width="' + size + '" height="' + h + '">'
+    // アンテナ
+    + '<line x1="33" y1="5" x2="40" y2="-4" stroke="#9E9E9E" stroke-width="2.2" stroke-linecap="round"/>'
+    + '<circle cx="41" cy="-6" r="4.5" fill="#E53935" stroke="#B71C1C" stroke-width="1"/>'
+    // ヘルメットのガラスドーム
+    + '<ellipse cx="30" cy="30" rx="27" ry="27" fill="rgba(200,225,255,0.32)" stroke="#B0C4DE" stroke-width="2"/>'
+    // 顔（肌色）
+    + '<ellipse cx="30" cy="32" rx="20" ry="22" fill="#F5C09A"/>'
+    // 髪の毛（茶色・3束）
+    + '<path d="M21 11 Q19 3 18 1" stroke="#7B4F2E" stroke-width="3.8" stroke-linecap="round" fill="none"/>'
+    + '<path d="M30 9 Q30 1 30 0" stroke="#7B4F2E" stroke-width="3.8" stroke-linecap="round" fill="none"/>'
+    + '<path d="M39 11 Q41 3 42 1" stroke="#7B4F2E" stroke-width="3.8" stroke-linecap="round" fill="none"/>'
+    // 耳
+    + '<ellipse cx="9" cy="33" rx="5" ry="7" fill="#E8A882"/>'
+    + '<ellipse cx="51" cy="33" rx="5" ry="7" fill="#E8A882"/>'
+    // 大きな丸い鼻
+    + '<ellipse cx="30" cy="38" rx="10.5" ry="8.5" fill="#E08060"/>'
+    + '<ellipse cx="27" cy="36" rx="3.2" ry="2" fill="rgba(255,200,180,0.55)"/>'
+    // 目（横長の黒いスリット）
+    + '<rect x="17" y="27" width="9" height="4" rx="2" fill="#1A1A1A"/>'
+    + '<rect x="34" y="27" width="9" height="4" rx="2" fill="#1A1A1A"/>'
+    // 口（小さな満足げな笑み）
+    + '<path d="M 26 46 Q 30 49 34 46" stroke="#C4826A" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+    // ヘルメット首輪パーツ
+    + '<rect x="16" y="55" width="28" height="7" rx="3.5" fill="#B0BEC5" stroke="#90A4AE" stroke-width="1"/>'
+    // 宇宙服の肩
+    + '<ellipse cx="30" cy="69" rx="24" ry="9" fill="white" stroke="#E0E0E0" stroke-width="1"/>'
+    // 赤いバックパック
+    + '<rect x="42" y="58" width="12" height="14" rx="3" fill="#E53935"/>'
+    + '<rect x="43.5" y="61" width="3" height="1.5" rx="1" fill="rgba(255,255,255,0.5)"/>'
+    + '<rect x="43.5" y="64" width="3" height="1.5" rx="1" fill="rgba(255,255,255,0.5)"/>'
+    + '<rect x="43.5" y="67" width="3" height="1.5" rx="1" fill="rgba(255,255,255,0.5)"/>'
+    + '</svg>';
+}
+
+/* ============================================= */
+/* パターン分析（振り返り・抵抗感検出）           */
+/* ============================================= */
+
+// 過去N日間の達成回数
+function recentCompletions(a, days) {
+  var since = Date.now() - days * DAY_MS;
+  var log = a.completionLog || [];
+  var count = log.filter(function(ts) { return ts >= since; }).length;
+  // completionLogがない旧データの場合: completedAtがあれば1として扱う
+  if (!count && !log.length && a.completed && a.completedAt && a.completedAt >= since) {
+    count = 1;
+  }
+  return count;
+}
+
+// 連続達成日数（最近の連続）
+function consecutiveDays(a) {
+  var log = (a.completionLog && a.completionLog.length)
+    ? a.completionLog
+    : (a.completed && a.completedAt ? [a.completedAt] : []);
+  if (!log.length) return 0;
+
+  var daySet = {};
+  log.forEach(function(ts) {
+    var d = new Date(ts);
+    var key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    daySet[key] = true;
+  });
+
+  var streak = 0;
+  var d = new Date();
+  d.setHours(0, 0, 0, 0);
+  for (var i = 0; i < 365; i++) {
+    var key = d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+    if (daySet[key]) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// アプリ全体で最後に達成した日のタイムスタンプ
+function lastActivityTs() {
+  var all = [];
+  state.achievements.forEach(function(a) {
+    (a.completionLog || []).forEach(function(ts) { all.push(ts); });
+    if (a.completed && a.completedAt && !(a.completionLog && a.completionLog.length)) {
+      all.push(a.completedAt);
+    }
+  });
+  return all.length ? Math.max.apply(null, all) : null;
+}
+
+// 抵抗実績: 未達成 & 7日間実績なし & 最近何かしら活動している
+function isResistant(a) {
+  if (a.completed) return false;
+  if (recentCompletions(a, 7) > 0) return false;
+  var last = lastActivityTs();
+  // アプリ全体で7日以内に活動がないなら「サボり全体」でフラグを立てない
+  if (!last || (Date.now() - last) > 7 * DAY_MS) return false;
+  return true;
+}
+
+// 最も連続達成が長い実績（2日以上のみ）
+function topStreakAchievement() {
+  var best = null, bestStreak = 0;
+  state.achievements.forEach(function(a) {
+    var s = consecutiveDays(a);
+    if (s > bestStreak) { bestStreak = s; best = a; }
+  });
+  return (best && bestStreak >= 2) ? { achievement: best, streak: bestStreak } : null;
+}
+
+// 抵抗実績リスト（最大3件）
+function resistantAchievements() {
+  return state.achievements.filter(isResistant).slice(0, 3);
+}
+
+// オリマーのメッセージを決定（優先度順）
+function olimarMessage() {
+  var alive = alivePikmin();
+  var weak = alive.filter(function(p) { return pikminState(p) === 'weak'; });
+  var resistant = resistantAchievements();
+  var topStreak = topStreakAchievement();
+
+  if (weak.length > 0) {
+    return weak.length + '匹が弱っているぞ！早く餌をあげてくれ！';
+  }
+  if (resistant.length > 0) {
+    var a = resistant[0];
+    return '「' + a.title + '」、しばらくやってないね。ハードルを下げてみる？';
+  }
+  if (topStreak) {
+    return '「' + topStreak.achievement.title + '」を' + topStreak.streak + '日連続達成！その調子だ！';
+  }
+  if (alive.length === 0) {
+    return '実績を達成してピクミンを仲間にしよう！小さな一歩から始めよう。';
+  }
+  var done = state.achievements.filter(function(a) { return a.completed; }).length;
+  if (done === 0) {
+    return '初めてのことで戸惑うのは普通だ。まずやってみることが大事だぞ！';
+  }
+  if (alive.length >= 10) {
+    return 'ガーデンに仲間がたくさんいる！引き続き頼むぞ、研究員！';
+  }
+  return '今日もピクミンたちのために頑張ってくれてありがとう！一緒に頑張ろう。';
+}
+
+/* ============================================= */
 /* render                                         */
 /* ============================================= */
 function render() {
   rolloverDailyCapsIfNeeded();
   renderResourceBar();
+  renderOlimarBanner();
   renderStats();
   renderGarden();
   renderMemorial();
@@ -1666,6 +2125,188 @@ function renderResourceBar() {
 }
 
 /* ============================================= */
+/* オリマーバナー描画                              */
+/* ============================================= */
+function renderOlimarBanner() {
+  document.getElementById('olimarPortrait').innerHTML = olimarSVG(52);
+  document.getElementById('olimarMsg').textContent = olimarMessage();
+}
+
+/* ============================================= */
+/* 振り返りジャーナル                              */
+/* ============================================= */
+function openJournalModal() {
+  document.getElementById('journalOlimarPortrait').innerHTML = olimarSVG(48);
+  renderJournal();
+  document.getElementById('journalModal').classList.add('active');
+}
+
+function closeJournalModal() {
+  document.getElementById('journalModal').classList.remove('active');
+}
+
+function renderJournal() {
+  const body = document.getElementById('journalBody');
+  const now = Date.now();
+  const DAYS = 30;
+
+  // --- サマリーセクション ---
+  const resistant = resistantAchievements();
+  const topStreak = topStreakAchievement();
+  const total7 = state.achievements.reduce((s, a) => s + recentCompletions(a, 7), 0);
+  const total30 = state.achievements.reduce((s, a) => s + recentCompletions(a, 30), 0);
+
+  let summaryHtml = `<div class="journal-summary">`;
+  summaryHtml += `<strong>🧑‍🚀 オリマーの分析</strong><br>`;
+  summaryHtml += `直近7日の達成回数: <strong>${total7}回</strong>  /  直近30日: <strong>${total30}回</strong><br>`;
+  if (topStreak) {
+    summaryHtml += `🔥 最高連続: 「${esc(topStreak.achievement.title)}」<strong>${topStreak.streak}日連続</strong><br>`;
+  }
+  if (resistant.length > 0) {
+    summaryHtml += `⚠ 抵抗感あり: <strong>${resistant.map(a => '「' + esc(a.title) + '」').join(' / ')}</strong><br>`;
+    summaryHtml += `<span style="font-size:0.88em;color:#555;">ハードルを一段下げた目標に切り替えてみましょう。</span>`;
+  } else {
+    summaryHtml += `<span style="color:#2E7D32;">全ての実績に抵抗感なし ✅</span>`;
+  }
+  summaryHtml += `</div>`;
+
+  // --- ヒートマップセクション ---
+  // 過去DAYS日の日付配列（新しい日 = 右）
+  const dateArr = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    dateArr.push(new Date(now - i * DAY_MS));
+  }
+  const todayD = new Date();
+  const todayDKey = `${todayD.getFullYear()}-${todayD.getMonth()}-${todayD.getDate()}`;
+
+  let heatmapHtml = `<div class="journal-section-title">📊 過去${DAYS}日の達成カレンダー</div>`;
+
+  // 凡例
+  heatmapHtml += `<div style="display:flex;gap:6px;align-items:center;font-size:0.72em;color:#999;margin-bottom:10px;">
+    <div class="heatmap-cell done" style="display:inline-block"></div> 達成
+    <div class="heatmap-cell" style="display:inline-block"></div> 未達成
+    <div class="heatmap-cell today" style="display:inline-block"></div> 今日
+  </div>`;
+
+  state.achievements.forEach(a => {
+    const log = (a.completionLog && a.completionLog.length)
+      ? a.completionLog
+      : (a.completed && a.completedAt ? [a.completedAt] : []);
+
+    const daySet = {};
+    log.forEach(ts => {
+      const d = new Date(ts);
+      daySet[`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`] = true;
+    });
+
+    const streak = consecutiveDays(a);
+    const rate7 = recentCompletions(a, 7);
+    const rate30 = recentCompletions(a, 30);
+    const isRes = isResistant(a);
+
+    const cells = dateArr.map(d => {
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const done = daySet[key];
+      const isToday = key === todayDKey;
+      const cls = done ? 'done' : '';
+      const todayCls = isToday ? ' today' : '';
+      return `<div class="heatmap-cell ${cls}${todayCls}" title="${d.getMonth()+1}/${d.getDate()}${done ? ' ✓' : ''}"></div>`;
+    }).join('');
+
+    heatmapHtml += `<div class="heatmap-row">
+      <div class="heatmap-title">
+        ${a.completed ? '✅' : '⭐'} ${esc(a.title)}
+        ${isRes ? '<span class="resistant-badge">⚠ 抵抗感</span>' : ''}
+        ${streak >= 2 ? `<span class="streak-badge">🔥 ${streak}日連続</span>` : ''}
+      </div>
+      <div class="heatmap-cells">${cells}</div>
+      <div class="heatmap-stats">
+        <span>今週 ${rate7}回</span>
+        <span>|</span>
+        <span>30日 ${rate30}回</span>
+        ${isRes ? '<span class="warn">| しばらく達成なし</span>' : ''}
+      </div>
+    </div>`;
+  });
+
+  body.innerHTML = summaryHtml + heatmapHtml;
+}
+
+/* ============================================= */
+/* ステップダウン（目標ハードルを下げる）          */
+/* ============================================= */
+let stepdownTargetId = null;
+
+// タイトルから「もう一段下げた」バージョンを提案
+function suggestStepDown(a) {
+  let title = a.title;
+  const desc = a.desc || '';
+
+  // 数字を半分にする (例: 1時間→30分, 30分→15分, 10回→5回)
+  const replaced = title.replace(/(\d+)(時間|分|回|ページ|km|歩|分間)/g, (match, n, unit) => {
+    const half = Math.ceil(parseInt(n) / 2);
+    return half + unit;
+  });
+  if (replaced !== title) {
+    return { title: replaced, desc };
+  }
+
+  // 数字なし → 「まず1分だけ」バリエーション
+  return { title: '1分だけ' + title, desc: 'まずは1分からスタート！' };
+}
+
+function openStepDownModal(id) {
+  const a = state.achievements.find(x => x.id === id);
+  if (!a) return;
+  stepdownTargetId = id;
+
+  const suggestion = suggestStepDown(a);
+  document.getElementById('stepdownOlimar').innerHTML = olimarSVG(62);
+  document.getElementById('stepdownSpeech').textContent =
+    `「${a.title}」…少し高い壁かもしれない。もう一段小さな目標から始めてみないか？`;
+  document.getElementById('stepdownSuggestion').innerHTML = `
+    <div class="suggest-label">🪜 オリマーの提案</div>
+    <div class="suggest-title">${esc(suggestion.title)}</div>
+    ${suggestion.desc ? `<div style="font-size:0.8em;color:#6a8a4f;margin-top:3px;">${esc(suggestion.desc)}</div>` : ''}`;
+  document.getElementById('stepdownTitle').value = suggestion.title;
+  document.getElementById('stepdownDesc').value = suggestion.desc;
+  document.getElementById('stepdownModal').classList.add('active');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('stepdownTitle').focus();
+    document.getElementById('stepdownTitle').select();
+  }));
+}
+
+function closeStepDownModal() {
+  document.getElementById('stepdownModal').classList.remove('active');
+  stepdownTargetId = null;
+}
+
+function applyStepDown() {
+  const title = document.getElementById('stepdownTitle').value.trim();
+  const desc = document.getElementById('stepdownDesc').value.trim();
+  if (!title) {
+    showToast('⚠ タイトルを入力してください');
+    document.getElementById('stepdownTitle').focus();
+    return;
+  }
+  const parentA = state.achievements.find(x => x.id === stepdownTargetId);
+  state.achievements.push({
+    id: 'a' + Date.now(),
+    title, desc,
+    pikminType: parentA ? parentA.pikminType : 'red',
+    foodReward: Math.max(1, (parentA ? parentA.foodReward : 3) - 1),
+    completed: false,
+    completedAt: null,
+    completionLog: [],
+    parentId: stepdownTargetId,
+  });
+  save(); render();
+  closeStepDownModal();
+  showToast(`🪜 「${title}」を追加しました！`);
+}
+
+/* ============================================= */
 /* 観察サマリー＋種別集計                          */
 /* ============================================= */
 function renderStats() {
@@ -1796,16 +2437,29 @@ function renderAchievements() {
 
   list.innerHTML = filtered.map(a => {
     const p = PIKMIN_TYPES[a.pikminType];
-    return `<div class="achievement-card${a.completed ? ' completed' : ''}">
+    const isRes = isResistant(a);
+    const streak = consecutiveDays(a);
+    const rate7 = recentCompletions(a, 7);
+    const isStepDown = !!a.parentId;
+
+    let rateHtml = '';
+    if (streak >= 2) rateHtml += `<span style="color:#2E7D32;">🔥 ${streak}日連続</span>`;
+    if (rate7 > 0) rateHtml += `<span>今週${rate7}回</span>`;
+    if (isRes) rateHtml += `<span style="color:#E53935;">⚠ 抵抗感あり</span>`;
+    if (isStepDown) rateHtml += `<span style="color:#1565C0;font-size:0.9em;">🪜 ステップダウン</span>`;
+
+    return `<div class="achievement-card${a.completed ? ' completed' : ''}${isRes ? ' resistant' : ''}">
       <div class="achievement-info">
         <div class="achievement-title">${a.completed ? '✅' : '⭐'} ${esc(a.title)}</div>
         <div class="achievement-desc">${esc(a.desc || '')}</div>
         <div class="achievement-reward">${pikminSVG(a.pikminType, 22)} ${p.name} 1匹 + 🍎 ${a.foodReward}</div>
+        ${rateHtml ? `<div class="achievement-rate">${rateHtml}</div>` : ''}
       </div>
       <div class="achievement-actions">
         ${a.completed
           ? `<button class="btn btn-uncomplete" data-action="toggle" data-id="${esc(a.id)}">↩ 戻す</button>`
           : `<button class="btn btn-complete" data-action="toggle" data-id="${esc(a.id)}">✓ 達成！</button>`}
+        ${isRes ? `<button class="btn-stepdown" data-action="stepdown" data-id="${esc(a.id)}">🪜 ハードル下げる</button>` : ''}
         <button class="btn btn-edit" data-action="edit" data-id="${esc(a.id)}">✎ 編集</button>
         <button class="btn btn-delete" data-action="delete" data-id="${esc(a.id)}">🗑 削除</button>
       </div>
@@ -2124,6 +2778,8 @@ function toggle(id) {
         state.pikmin = state.pikmin.filter(x => !(x.fromAchievement === id && !x.diedAt));
         a.completed = false;
         a.completedAt = null;
+        // completionLog の最後の1件を取り消す
+        if (a.completionLog && a.completionLog.length > 0) a.completionLog.pop();
         save(); render();
         showToast('↩ 実績を戻しました');
       }
@@ -2162,6 +2818,9 @@ function toggle(id) {
 
   a.completed = true;
   a.completedAt = Date.now();
+  // completionLog に達成タイムスタンプを記録
+  if (!a.completionLog) a.completionLog = [];
+  a.completionLog.push(Date.now());
   save();
   render();
 
@@ -2422,6 +3081,15 @@ document.addEventListener('click', e => {
     case 'pet-pikmin':        if (activePikminId) petPikmin(activePikminId); break;
     case 'close-action-sheet':closeActionSheet(); break;
 
+    // オリマー振り返りジャーナル
+    case 'open-journal':      openJournalModal(); break;
+    case 'close-journal':     closeJournalModal(); break;
+
+    // ステップダウン
+    case 'stepdown':          openStepDownModal(id); break;
+    case 'close-stepdown':    closeStepDownModal(); break;
+    case 'apply-stepdown':    applyStepDown(); break;
+
     // カスタム確認モーダル
     case 'confirm-ok':        closeConfirmModal(true); break;
     case 'confirm-cancel':    closeConfirmModal(false); break;
@@ -2438,6 +3106,12 @@ document.getElementById('confirmModal').addEventListener('click', e => {
 document.getElementById('actionSheet').addEventListener('click', e => {
   if (e.target.id === 'actionSheet') closeActionSheet();
 });
+document.getElementById('journalModal').addEventListener('click', e => {
+  if (e.target.id === 'journalModal') closeJournalModal();
+});
+document.getElementById('stepdownModal').addEventListener('click', e => {
+  if (e.target.id === 'stepdownModal') closeStepDownModal();
+});
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -2445,6 +3119,8 @@ document.addEventListener('keydown', e => {
     closeModal();
     closeDetailModal();
     closeActionSheet();
+    closeJournalModal();
+    closeStepDownModal();
   } else if (e.key === 'Enter' && document.getElementById('confirmModal').classList.contains('active')) {
     // 確認モーダルが開いているとき、Enterで確定
     e.preventDefault();
