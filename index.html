@@ -196,20 +196,27 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 
 .progress-bar {
   background: #E8EAED;
-  height: 32px;
-  border-radius: 16px;
+  min-height: 36px;           /* 固定 height → min-height で自動拡大 */
+  border-radius: 18px;
   overflow: hidden;
   position: relative;
+  display: flex;              /* 文字が中央に来るように flex 化 */
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  box-sizing: border-box;
 }
 
 .progress-fill {
+  position: absolute;
+  top: 0; left: 0; bottom: 0; /* 親の高さに追従 */
   background: linear-gradient(90deg, #FFD54F, #FF7043, #66BB6A);
-  height: 100%;
   width: 0%;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 16px;
+  border-radius: 18px;
   background-size: 200% 100%;
   animation: shimmer 3s linear infinite;
+  z-index: 0;
 }
 
 @keyframes shimmer {
@@ -218,12 +225,21 @@ header p { font-size: 1.1em; position: relative; opacity: 0.95; }
 }
 
 .progress-text {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;          /* absolute → relative: バーを押し広げる */
+  z-index: 1;
   font-weight: bold;
   color: white;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+  text-align: center;
+  line-height: 1.3;
+  white-space: nowrap;         /* まず1行で入れる */
+  font-size: 0.95em;
+}
+@media (max-width: 420px) {
+  .progress-text {
+    white-space: normal;       /* 画面が狭いときだけ折返し許可（はみ出すよりマシ）*/
+    font-size: 0.88em;
+  }
 }
 
 .stats-grid {
@@ -747,12 +763,278 @@ button:focus-visible,
   box-shadow: 0 0 0 5px rgba(255, 213, 79, 0.3);
 }
 
+/* ============================================= */
+/* 育成ゲーム関連UI                                */
+/* ============================================= */
+
+/* ヘッダー内の資源バー（餌・今日の取得状況） */
+.resource-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  position: relative;
+}
+.resource-chip {
+  background: rgba(255,255,255,0.9);
+  color: #5D4037;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: bold;
+  text-shadow: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  white-space: nowrap;
+}
+.food-chip { background: linear-gradient(135deg, #FFF59D, #FFB74D); color: #4E342E; }
+.food-chip.pulse { animation: food-pulse 0.6s ease-out; }
+@keyframes food-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* 進捗バーの期間タブ */
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.progress-header .section-title { margin-bottom: 0; }
+.period-tabs {
+  display: flex;
+  gap: 4px;
+  background: #F5F5F5;
+  padding: 4px;
+  border-radius: 14px;
+}
+.period-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 0.85em;
+  font-weight: bold;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.period-btn:hover { background: rgba(255, 213, 79, 0.3); }
+.period-btn.active {
+  background: linear-gradient(135deg, #FFD54F, #FF7043);
+  color: white;
+  box-shadow: 0 2px 6px rgba(255, 112, 67, 0.3);
+}
+
+/* 観察サマリー */
+.observation-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.obs-chip {
+  flex: 1;
+  min-width: 85px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  text-align: center;
+  font-weight: bold;
+  background: #F5F5F5;
+  color: #555;
+}
+.obs-chip.healthy  { background: linear-gradient(135deg, #AED581, #66BB6A); color: white; }
+.obs-chip.hungry   { background: linear-gradient(135deg, #FFD54F, #FFA726); color: white; }
+.obs-chip.weak     { background: linear-gradient(135deg, #FF8A65, #E64A19); color: white; }
+.obs-chip.memorial { background: linear-gradient(135deg, #B0BEC5, #546E7A); color: white; }
+.obs-chip .num  { display: block; font-size: 1.4em; line-height: 1; }
+.obs-chip .lbl  { display: block; font-size: 0.78em; opacity: 0.95; margin-top: 4px; }
+
+/* ピクミン状態別の見た目 */
+.pikmin.weak svg    { filter: saturate(0.3) brightness(0.85); }
+.pikmin.hungry svg  { filter: saturate(0.75); }
+.pikmin.weak        { animation-duration: 3s; opacity: 0.85; }
+
+/* ピクミンの状態アイコン（右上に小さく） */
+.pikmin-status-badge {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  pointer-events: none;
+  animation: status-bob 1.5s ease-in-out infinite;
+}
+@keyframes status-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ガーデンヒント */
+.garden-hint {
+  text-align: center;
+  color: #5D4037;
+  background: rgba(255, 243, 224, 0.85);
+  border: 2px dashed #FFB74D;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 12px;
+  font-size: 0.9em;
+  display: none;
+}
+.garden-hint.show { display: block; }
+
+/* お墓エリア */
+.memorial { background: rgba(236, 239, 241, 0.92) !important; }
+.memorial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+}
+.memorial-card {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  font-size: 0.8em;
+  color: #455A64;
+}
+.memorial-card .grave { font-size: 2em; line-height: 1; }
+.memorial-card .age { font-weight: bold; color: #37474F; margin-top: 4px; }
+
+/* ピクミン操作シート（ボトムシート風） */
+.action-sheet {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1200;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+.action-sheet.active { display: flex; }
+.action-sheet-content {
+  background: white;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  animation: slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (min-width: 600px) {
+  .action-sheet { align-items: center; }
+  .action-sheet-content { border-radius: 24px; max-width: 420px; }
+}
+.action-sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #EEE;
+}
+.action-sheet-pikmin {
+  flex-shrink: 0;
+  width: 80px; height: 120px;
+  display: flex; align-items: center; justify-content: center;
+}
+.action-sheet-info { flex: 1; min-width: 0; }
+.action-sheet-name {
+  font-size: 1.15em;
+  font-weight: bold;
+  color: #2d6a3e;
+  margin-bottom: 4px;
+}
+.action-sheet-meta {
+  font-size: 0.85em;
+  color: #666;
+  line-height: 1.5;
+}
+.action-sheet-bars {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bar-row { display: flex; align-items: center; gap: 6px; font-size: 0.75em; color: #555; }
+.bar-row .label { min-width: 48px; }
+.bar-row .bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #E8EAED;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-row .bar-fg {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+.bar-fg.full     { background: linear-gradient(90deg, #66BB6A, #AED581); }
+.bar-fg.hungry   { background: linear-gradient(90deg, #FFA726, #FFD54F); }
+.bar-fg.starving { background: linear-gradient(90deg, #E64A19, #FF8A65); }
+
+.action-sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.action-btn {
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-feed {
+  background: linear-gradient(135deg, #FFD54F, #FF7043);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 112, 67, 0.4);
+}
+.action-feed:disabled {
+  background: #E0E0E0;
+  color: #999;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.action-pet {
+  background: linear-gradient(135deg, #81D4FA, #4FC3F7);
+  color: white;
+}
+.action-close {
+  background: #F5F5F5;
+  color: #666;
+}
+.action-btn:not(:disabled):hover { transform: translateY(-2px); }
+
+/* フォームのヒント */
+.form-group .hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78em;
+  color: #888;
+  line-height: 1.5;
+}
+
 @media (max-width: 600px) {
   header h1 { font-size: 1.8em; }
   .achievement-card { flex-direction: column; align-items: stretch; }
   .achievement-actions { flex-direction: row; justify-content: flex-end; flex-wrap: wrap; }
   .pikmin-selector { grid-template-columns: repeat(3, 1fr); }
   .detail-pikmin { width: 60px; height: 90px; }
+  .progress-header { flex-direction: column; align-items: flex-start; }
+  .period-tabs { width: 100%; justify-content: space-between; }
+  .period-btn { flex: 1; }
+  .resource-bar { font-size: 0.85em; }
 }
 </style>
 </head>
@@ -764,11 +1046,28 @@ button:focus-visible,
 <div class="container">
   <header>
     <h1>🌱 ピクミンガーデン 🌱</h1>
-    <p>実績を達成してピクミンを集めよう！</p>
+    <p>実績を達成してピクミンを育てよう！</p>
+    <div class="resource-bar">
+      <span class="resource-chip food-chip" title="ピクミンに餌をあげるとお腹が満たされる">
+        🍎 餌 <strong id="foodCount">0</strong>
+      </span>
+      <span class="resource-chip" title="今日獲得した餌・ピクミン">
+        📅 今日 <strong id="todayFood">0</strong>/<span id="todayCapFood">10</span> 🍎
+        &nbsp;/&nbsp;<strong id="todayPikmin">0</strong>/<span id="todayCapPikmin">5</span> 🌱
+      </span>
+    </div>
   </header>
 
   <div class="progress-container">
-    <h2 class="section-title">🏆 達成進捗</h2>
+    <div class="progress-header">
+      <h2 class="section-title">🏆 達成進捗</h2>
+      <div class="period-tabs" id="periodTabs">
+        <button class="period-btn" data-action="period" data-period="today">今日</button>
+        <button class="period-btn" data-action="period" data-period="week">今週</button>
+        <button class="period-btn" data-action="period" data-period="month">今月</button>
+        <button class="period-btn active" data-action="period" data-period="all">全期間</button>
+      </div>
+    </div>
     <div class="progress-bar">
       <div class="progress-fill" id="progressFill"></div>
       <div class="progress-text" id="progressText">0 / 0 達成</div>
@@ -776,7 +1075,8 @@ button:focus-visible,
   </div>
 
   <section class="stats">
-    <h2 class="section-title">🌟 ピクミンコレクション</h2>
+    <h2 class="section-title">🔎 ピクミン観察</h2>
+    <div class="observation-summary" id="observationSummary"></div>
     <div class="stats-grid" id="statsGrid"></div>
   </section>
 
@@ -786,6 +1086,12 @@ button:focus-visible,
       <button class="btn-detail" data-action="open-detail">🔍 詳しく見る</button>
     </div>
     <div class="pikmin-area" id="pikminArea"></div>
+    <div class="garden-hint" id="gardenHint"></div>
+  </section>
+
+  <section class="achievements memorial" id="memorialSection" hidden>
+    <h2 class="section-title">🪦 見送ったピクミン</h2>
+    <div class="memorial-grid" id="memorialGrid"></div>
   </section>
 
   <section class="achievements">
@@ -819,12 +1125,13 @@ button:focus-visible,
       <textarea id="achDesc" rows="2" placeholder="例: 朝6時までに起きる" maxlength="200"></textarea>
     </div>
     <div class="form-group">
-      <label>🌸 もらえるピクミン</label>
+      <label>🌸 もらえるピクミン（1匹）＋ 餌ボーナス</label>
       <div class="pikmin-selector" id="pikminSelector"></div>
     </div>
     <div class="form-group">
-      <label>🔢 もらえる数</label>
-      <input type="number" id="achCount" min="1" max="50" value="3">
+      <label>🍎 餌ボーナス（1〜10個）</label>
+      <input type="number" id="achCount" min="1" max="10" value="3">
+      <small class="hint">達成するとピクミン1匹＋この数の餌が貰えます。1日の上限を超えた分は餌として加算されます。</small>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" data-action="close-modal">キャンセル</button>
@@ -843,6 +1150,27 @@ button:focus-visible,
   <div class="detail-filters" id="detailFilters"></div>
   <div class="detail-stage">
     <div class="detail-ground" id="detailGround"></div>
+  </div>
+</div>
+
+<!-- ピクミン操作シート（タップで表示: 餌をあげる／なでる／観察） -->
+<div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="ピクミン操作">
+  <div class="action-sheet-content">
+    <div class="action-sheet-header">
+      <div class="action-sheet-pikmin" id="actionPikminSvg"></div>
+      <div class="action-sheet-info">
+        <div class="action-sheet-name" id="actionPikminName">-</div>
+        <div class="action-sheet-meta" id="actionPikminMeta">-</div>
+        <div class="action-sheet-bars" id="actionPikminBars"></div>
+      </div>
+    </div>
+    <div class="action-sheet-actions">
+      <button class="action-btn action-feed" id="actionFeedBtn" data-action="feed-pikmin">
+        🍎 餌をあげる (<span id="actionFoodCount">0</span>)
+      </button>
+      <button class="action-btn action-pet" data-action="pet-pikmin">🤚 なでる</button>
+      <button class="action-btn action-close" data-action="close-action-sheet">閉じる</button>
+    </div>
   </div>
 </div>
 
@@ -879,56 +1207,282 @@ const PIKMIN_TYPES = {
 };
 
 const DEFAULT_ACHIEVEMENTS = [
-  { id: 'd1', title: 'はじめの一歩',   desc: 'アプリを開いた',         pikminType: 'red',    pikminCount: 3, completed: false },
-  { id: 'd2', title: '早起きチャレンジ', desc: '朝6時までに起きた',       pikminType: 'yellow', pikminCount: 5, completed: false },
-  { id: 'd3', title: '集中勉強',       desc: '1時間集中して勉強した',   pikminType: 'blue',   pikminCount: 3, completed: false },
-  { id: 'd4', title: '運動する',       desc: '30分以上運動した',        pikminType: 'purple', pikminCount: 4, completed: false },
-  { id: 'd5', title: '本を読む',       desc: '本を30分読んだ',          pikminType: 'white',  pikminCount: 3, completed: false },
-  { id: 'd6', title: 'お部屋キレイ',   desc: '自分の部屋を掃除した',    pikminType: 'rock',   pikminCount: 2, completed: false },
-  { id: 'd7', title: '深呼吸・瞑想',   desc: '5分間瞑想した',           pikminType: 'ice',    pikminCount: 2, completed: false },
-  { id: 'd8', title: '新しい挑戦',     desc: '初めてのことをやってみた', pikminType: 'winged', pikminCount: 5, completed: false }
+  { id: 'd1', title: 'はじめの一歩',   desc: 'アプリを開いた',         pikminType: 'red',    foodReward: 3, completed: false, completedAt: null },
+  { id: 'd2', title: '早起きチャレンジ', desc: '朝6時までに起きた',       pikminType: 'yellow', foodReward: 5, completed: false, completedAt: null },
+  { id: 'd3', title: '集中勉強',       desc: '1時間集中して勉強した',   pikminType: 'blue',   foodReward: 3, completed: false, completedAt: null },
+  { id: 'd4', title: '運動する',       desc: '30分以上運動した',        pikminType: 'purple', foodReward: 4, completed: false, completedAt: null },
+  { id: 'd5', title: '本を読む',       desc: '本を30分読んだ',          pikminType: 'white',  foodReward: 3, completed: false, completedAt: null },
+  { id: 'd6', title: 'お部屋キレイ',   desc: '自分の部屋を掃除した',    pikminType: 'rock',   foodReward: 2, completed: false, completedAt: null },
+  { id: 'd7', title: '深呼吸・瞑想',   desc: '5分間瞑想した',           pikminType: 'ice',    foodReward: 2, completed: false, completedAt: null },
+  { id: 'd8', title: '新しい挑戦',     desc: '初めてのことをやってみた', pikminType: 'winged', foodReward: 5, completed: false, completedAt: null }
 ];
 
-let achievements = [];
+/* ============================================= */
+/* ゲームバランス定数                             */
+/* ============================================= */
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HUNGRY_AFTER_MS = 3 * DAY_MS; // 最終給餌から3日で「お腹すいた」
+const WEAK_AFTER_MS   = 5 * DAY_MS; // 5日で「弱っている」
+const DEAD_AFTER_MS   = 7 * DAY_MS; // 7日で死亡（削除→お墓へ）
+const STAGE_SPROUT_MS = 1 * DAY_MS; // 1日で成体
+const STAGE_FLOWER_MS = 3 * DAY_MS; // 3日で花咲き
+const DAILY_PIKMIN_CAP = 5;          // 1日に新規ピクミンとして貰える上限
+const DAILY_FOOD_CAP   = 10;         // 1日に獲得できる餌の上限
+
+/* ============================================= */
+/* ゲーム状態                                     */
+/* ============================================= */
+let state = {
+  version: 2,
+  achievements: [],
+  pikmin: [],            // [{ id, type, bornAt, lastFedAt, fromAchievement, diedAt }]
+  resources: {
+    food: 0,
+    todayKey: '',        // 'YYYY-MM-DD' 今日の日付
+    todayFood: 0,        // 今日獲得した餌
+    todayPikmin: 0,      // 今日生まれたピクミン
+  },
+  settings: {
+    progressPeriod: 'all',  // today|week|month|all
+  },
+};
 let editingId = null;
 let selectedType = 'red';
 let currentFilter = 'all';
 let detailFilter = 'all';
+let activePikminId = null;  // 操作シートで選択中のピクミン
+
+// 短縮参照
+const achievements = () => state.achievements;
+
+/* ============================================= */
+/* 日付ユーティリティ                              */
+/* ============================================= */
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function startOfDayMs()   { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); }
+function startOfWeekMs()  { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime(); }
+function startOfMonthMs() { const d = new Date(); d.setHours(0,0,0,0); d.setDate(1); return d.getTime(); }
+
+/* ============================================= */
+/* 保存・ロード・マイグレーション                  */
+/* ============================================= */
+const STORAGE_KEY = 'pikminGame_v2';
+const LEGACY_KEY  = 'pikminGame_v1';
 
 function load() {
-  const saved = localStorage.getItem('pikminGame_v1');
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const legacy = localStorage.getItem(LEGACY_KEY);
+
   if (saved) {
-    try { achievements = JSON.parse(saved); }
-    catch(e) { achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS)); }
+    try { state = normalizeState(JSON.parse(saved)); }
+    catch(e) { state = makeFreshState(); }
+  } else if (legacy) {
+    try { state = migrateFromV1(JSON.parse(legacy)); }
+    catch(e) { state = makeFreshState(); }
+    save();
   } else {
-    achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
+    state = makeFreshState();
     save();
   }
+
+  rolloverDailyCapsIfNeeded();
+  tick();
   initBackground();
   render();
   renderPikminSelector();
 }
 
-function save() { localStorage.setItem('pikminGame_v1', JSON.stringify(achievements)); }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
+function makeFreshState() {
+  return {
+    version: 2,
+    achievements: JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS)),
+    pikmin: [],
+    resources: { food: 0, todayKey: todayKey(), todayFood: 0, todayPikmin: 0 },
+    settings: { progressPeriod: 'all' },
+  };
+}
+
+// v1データ（配列の achievements のみ）から v2 に移行
+function migrateFromV1(v1Achievements) {
+  const now = Date.now();
+  const newPikmin = [];
+  const newAchievements = (Array.isArray(v1Achievements) ? v1Achievements : []).map(a => {
+    // 完了済みの実績はピクミンを遡って生成
+    if (a.completed) {
+      const count = Math.max(1, a.pikminCount || 1);
+      // 生年月日を過去にランダム分散（最大7日前）＋ lastFedAt=now で不死スタート
+      for (let i = 0; i < count; i++) {
+        const ageAgo = Math.random() * 7 * DAY_MS;
+        newPikmin.push({
+          id: 'p' + (now - i) + '_' + Math.random().toString(36).slice(2, 8),
+          type: a.pikminType,
+          bornAt: now - ageAgo,
+          lastFedAt: now,  // 移行時は全員お腹満タン
+          fromAchievement: a.id,
+          diedAt: null,
+        });
+      }
+    }
+    return {
+      id: a.id,
+      title: a.title,
+      desc: a.desc || '',
+      pikminType: a.pikminType,
+      foodReward: Math.max(1, Math.min(10, a.pikminCount || 3)),
+      completed: !!a.completed,
+      completedAt: a.completed ? now : null,
+    };
+  });
+  return {
+    version: 2,
+    achievements: newAchievements.length ? newAchievements : JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS)),
+    pikmin: newPikmin,
+    resources: { food: 0, todayKey: todayKey(), todayFood: 0, todayPikmin: 0 },
+    settings: { progressPeriod: 'all' },
+  };
+}
+
+// 既存stateの欠損フィールドを補う（バージョンアップ耐性）
+function normalizeState(s) {
+  const base = makeFreshState();
+  const merged = { ...base, ...s };
+  merged.achievements = (s.achievements || base.achievements).map(a => ({
+    id: a.id,
+    title: a.title || '',
+    desc: a.desc || '',
+    pikminType: a.pikminType || 'red',
+    foodReward: Math.max(1, Math.min(10, a.foodReward || a.pikminCount || 3)),
+    completed: !!a.completed,
+    completedAt: a.completedAt || (a.completed ? Date.now() : null),
+  }));
+  merged.pikmin = (s.pikmin || []).map(p => ({
+    id: p.id,
+    type: p.type,
+    bornAt: p.bornAt || Date.now(),
+    lastFedAt: p.lastFedAt || p.bornAt || Date.now(),
+    fromAchievement: p.fromAchievement || null,
+    diedAt: p.diedAt || null,
+  }));
+  merged.resources = { ...base.resources, ...(s.resources || {}) };
+  merged.settings  = { ...base.settings,  ...(s.settings  || {}) };
+  return merged;
+}
+
+// 日付が変わっていたら今日の上限カウンタをリセット
+function rolloverDailyCapsIfNeeded() {
+  const tk = todayKey();
+  if (state.resources.todayKey !== tk) {
+    state.resources.todayKey = tk;
+    state.resources.todayFood = 0;
+    state.resources.todayPikmin = 0;
+  }
+}
+
+/* ============================================= */
+/* 時間経過で状態を更新（tick）                    */
+/* ============================================= */
+function tick() {
+  const now = Date.now();
+  let changed = false;
+  state.pikmin.forEach(p => {
+    if (p.diedAt) return; // 既に死亡
+    const since = now - p.lastFedAt;
+    if (since >= DEAD_AFTER_MS) {
+      p.diedAt = p.lastFedAt + DEAD_AFTER_MS;
+      changed = true;
+    }
+  });
+  if (changed) save();
+}
+
+/* ============================================= */
+/* ピクミンの派生状態                              */
+/* ============================================= */
+function pikminState(p) {
+  if (p.diedAt) return 'dead';
+  const since = Date.now() - p.lastFedAt;
+  if (since >= WEAK_AFTER_MS)   return 'weak';
+  if (since >= HUNGRY_AFTER_MS) return 'hungry';
+  return 'healthy';
+}
+function pikminStage(p) {
+  const age = Date.now() - p.bornAt;
+  if (age >= STAGE_FLOWER_MS) return 'flower';
+  if (age >= STAGE_SPROUT_MS) return 'sprout';
+  return 'seed';
+}
+function pikminHungerRatio(p) {
+  const since = Date.now() - p.lastFedAt;
+  return Math.max(0, Math.min(1, since / DEAD_AFTER_MS));
+}
+function pikminAgeDays(p) {
+  const end = p.diedAt || Date.now();
+  return Math.max(0, (end - p.bornAt) / DAY_MS);
+}
+function alivePikmin() { return state.pikmin.filter(p => !p.diedAt); }
+function deadPikmin()  { return state.pikmin.filter(p => p.diedAt); }
+
+/* ============================================= */
+/* render                                         */
+/* ============================================= */
 function render() {
+  rolloverDailyCapsIfNeeded();
+  renderResourceBar();
   renderStats();
   renderGarden();
+  renderMemorial();
   renderAchievements();
   renderProgress();
   renderBgPikmin();
 }
 
-function pikminSVG(type, size = 38) {
+function pikminSVG(type, size = 38, opts = {}) {
   const p = PIKMIN_TYPES[type];
   const h = Math.round(size * 58 / 38);
+  const stage = opts.stage || 'sprout';
 
-  // 共通パーツ：茎と葉っぱ
+  // 共通パーツ：茎
   const stem = `<line x1="20" y1="32" x2="20" y2="14" stroke="#2d6a3e" stroke-width="2.5"/>`;
-  const leaf = `
-    <ellipse cx="22" cy="8" rx="9" ry="5" fill="#66BB6A" transform="rotate(-15 22 8)"/>
-    <ellipse cx="22" cy="8" rx="6" ry="3" fill="#81C784" transform="rotate(-15 22 8)"/>
-    <path d="M 20 14 Q 22 11 26 6" stroke="#2d6a3e" stroke-width="0.4" fill="none"/>`;
+
+  // 頭の上のパーツ（成長段階で変化）
+  let topping;
+  if (stage === 'flower') {
+    // 花（5枚花びら）：タイプに応じた色
+    const petal = type === 'red'    ? '#FFEB3B'
+                : type === 'blue'   ? '#FFF176'
+                : type === 'yellow' ? '#FF80AB'
+                : type === 'purple' ? '#FFD54F'
+                : type === 'white'  ? '#FFEE58'
+                : type === 'rock'   ? '#EC407A'
+                : type === 'winged' ? '#FFEB3B'
+                : '#E1BEE7';
+    topping = `
+      <circle cx="16" cy="10" r="3.2" fill="${petal}" opacity="0.95"/>
+      <circle cx="24" cy="10" r="3.2" fill="${petal}" opacity="0.95"/>
+      <circle cx="20" cy="5.5" r="3.2" fill="${petal}" opacity="0.95"/>
+      <circle cx="17.5" cy="14" r="3" fill="${petal}" opacity="0.95"/>
+      <circle cx="22.5" cy="14" r="3" fill="${petal}" opacity="0.95"/>
+      <circle cx="20" cy="10" r="2" fill="#FFF9C4" stroke="#F57F17" stroke-width="0.4"/>`;
+  } else if (stage === 'seed') {
+    // 芽：小さい葉1枚
+    topping = `
+      <ellipse cx="22" cy="10" rx="5" ry="3" fill="#81C784" transform="rotate(-15 22 10)"/>
+      <path d="M 20 14 Q 22 12 25 9" stroke="#2d6a3e" stroke-width="0.4" fill="none"/>`;
+  } else {
+    // 通常の葉（sprout）
+    topping = `
+      <ellipse cx="22" cy="8" rx="9" ry="5" fill="#66BB6A" transform="rotate(-15 22 8)"/>
+      <ellipse cx="22" cy="8" rx="6" ry="3" fill="#81C784" transform="rotate(-15 22 8)"/>
+      <path d="M 20 14 Q 22 11 26 6" stroke="#2d6a3e" stroke-width="0.4" fill="none"/>`;
+  }
   const legs = `
     <line x1="16" y1="56" x2="14" y2="59" stroke="${p.accent}" stroke-width="2.5" stroke-linecap="round"/>
     <line x1="24" y1="56" x2="26" y2="59" stroke="${p.accent}" stroke-width="2.5" stroke-linecap="round"/>`;
@@ -1081,7 +1635,7 @@ function pikminSVG(type, size = 38) {
   return `<svg viewBox="0 0 40 60" width="${size}" height="${h}">
     ${behind}
     ${stem}
-    ${leaf}
+    ${topping}
     ${body}
     ${extras}
     ${eyes}
@@ -1099,63 +1653,137 @@ function hashCode(s) {
   return h;
 }
 
-function getAllEarnedPikmin() {
-  const result = [];
-  achievements.filter(a => a.completed).forEach(a => {
-    for (let i = 0; i < a.pikminCount; i++) {
-      const key = `${a.id}-${i}`;
-      result.push({ type: a.pikminType, key, sortKey: hashCode(key) });
-    }
-  });
-  return result;
+/* ============================================= */
+/* リソースバー（餌・日次上限）                    */
+/* ============================================= */
+function renderResourceBar() {
+  const r = state.resources;
+  document.getElementById('foodCount').textContent = r.food;
+  document.getElementById('todayFood').textContent = r.todayFood;
+  document.getElementById('todayPikmin').textContent = r.todayPikmin;
+  document.getElementById('todayCapFood').textContent = DAILY_FOOD_CAP;
+  document.getElementById('todayCapPikmin').textContent = DAILY_PIKMIN_CAP;
 }
 
+/* ============================================= */
+/* 観察サマリー＋種別集計                          */
+/* ============================================= */
 function renderStats() {
-  const stats = {};
-  for (const type in PIKMIN_TYPES) stats[type] = 0;
-  achievements.filter(a => a.completed).forEach(a => {
-    stats[a.pikminType] = (stats[a.pikminType] || 0) + a.pikminCount;
+  const alive = alivePikmin();
+  const counts = { healthy: 0, hungry: 0, weak: 0 };
+  const byType = {};
+  for (const t in PIKMIN_TYPES) byType[t] = 0;
+  alive.forEach(p => {
+    counts[pikminState(p)]++;
+    byType[p.type] = (byType[p.type] || 0) + 1;
   });
+  const deadCount = deadPikmin().length;
 
+  // サマリー
+  const summary = document.getElementById('observationSummary');
+  summary.innerHTML = `
+    <div class="obs-chip healthy"><span class="num">${counts.healthy}</span><span class="lbl">🌿 健康</span></div>
+    <div class="obs-chip hungry"><span class="num">${counts.hungry}</span><span class="lbl">🍽️ 空腹</span></div>
+    <div class="obs-chip weak"><span class="num">${counts.weak}</span><span class="lbl">💧 弱ってる</span></div>
+    <div class="obs-chip memorial"><span class="num">${deadCount}</span><span class="lbl">🪦 見送り</span></div>
+  `;
+
+  // 種別カード
   const grid = document.getElementById('statsGrid');
-  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  const total = alive.length;
   let html = `<div class="stat-card" style="background: linear-gradient(135deg, #FFD54F, #FF7043);">
     <span class="count">${total}</span><span class="label">🌱 合計</span>
   </div>`;
-
   for (const type in PIKMIN_TYPES) {
+    if (!byType[type]) continue;
     const p = PIKMIN_TYPES[type];
     html += `<div class="stat-card" style="background: linear-gradient(135deg, ${p.color}, ${p.accent});">
-      <span class="count">${stats[type]}</span><span class="label">${p.emoji} ${p.name}</span>
+      <span class="count">${byType[type]}</span><span class="label">${p.emoji} ${p.name}</span>
     </div>`;
   }
   grid.innerHTML = html;
 }
 
+/* ============================================= */
+/* ガーデン描画（生きているピクミンのみ）          */
+/* ============================================= */
 function renderGarden() {
   const area = document.getElementById('pikminArea');
-  const pikmin = getAllEarnedPikmin();
+  const pikmin = alivePikmin().slice();
 
   if (pikmin.length === 0) {
     area.innerHTML = '<div class="empty-garden">🌱 実績を達成してピクミンを集めよう！ 🌱</div>';
+    document.getElementById('gardenHint').className = 'garden-hint';
     return;
   }
 
-  // 安定した擬似ランダム並び（keyのハッシュで決定的にシャッフル）
-  // 毎回ランダムにしないことで「さっき見た子」を見失わない
-  pikmin.sort((a, b) => a.sortKey - b.sortKey);
-  area.innerHTML = pikmin.map((p, i) =>
-    `<div class="pikmin" data-pikmin-key="${esc(p.key)}" style="animation-delay: ${(i % 12) * 0.1}s" title="${PIKMIN_TYPES[p.type].name}">
-      ${pikminSVG(p.type)}
-    </div>`
-  ).join('');
+  // 安定した擬似ランダム並び（idのハッシュで決定的にシャッフル）
+  pikmin.sort((a, b) => hashCode(a.id) - hashCode(b.id));
+
+  area.innerHTML = pikmin.map((p, i) => {
+    const st = pikminState(p);
+    const stg = pikminStage(p);
+    const badge = st === 'weak'   ? '<span class="pikmin-status-badge">💧</span>'
+                : st === 'hungry' ? '<span class="pikmin-status-badge">🍽️</span>'
+                : stg === 'flower' ? '' // 花はSVG内
+                : '';
+    return `<div class="pikmin ${st}" data-pikmin-id="${esc(p.id)}" style="animation-delay: ${(i % 12) * 0.1}s" title="${PIKMIN_TYPES[p.type].name}・${stageLabel(stg)}・${stateLabel(st)}">
+      ${pikminSVG(p.type, 38, { stage: stg, state: st })}
+      ${badge}
+    </div>`;
+  }).join('');
+
+  // ガーデンヒント（弱っている子がいれば表示）
+  const hint = document.getElementById('gardenHint');
+  const weak = pikmin.filter(p => pikminState(p) === 'weak').length;
+  const hungry = pikmin.filter(p => pikminState(p) === 'hungry').length;
+  if (weak > 0) {
+    hint.innerHTML = `💧 <strong>${weak}匹</strong>のピクミンが弱っています。タップして餌をあげましょう！`;
+    hint.className = 'garden-hint show';
+  } else if (hungry > 0) {
+    hint.innerHTML = `🍽️ <strong>${hungry}匹</strong>がお腹を空かせています。タップで給餌できます。`;
+    hint.className = 'garden-hint show';
+  } else {
+    hint.className = 'garden-hint';
+  }
 }
 
+function stageLabel(s) { return s === 'seed' ? '幼体' : s === 'sprout' ? '成体' : '花咲き'; }
+function stateLabel(s) {
+  return s === 'healthy' ? '健康' : s === 'hungry' ? 'お腹すいた' : s === 'weak' ? '弱ってる' : '天に';
+}
+
+/* ============================================= */
+/* お墓エリア                                      */
+/* ============================================= */
+function renderMemorial() {
+  const dead = deadPikmin();
+  const sec = document.getElementById('memorialSection');
+  const grid = document.getElementById('memorialGrid');
+  if (dead.length === 0) { sec.hidden = true; return; }
+  sec.hidden = false;
+  // 新しい死亡順
+  dead.sort((a, b) => b.diedAt - a.diedAt);
+  grid.innerHTML = dead.map(p => {
+    const pt = PIKMIN_TYPES[p.type];
+    const ageDays = Math.floor(pikminAgeDays(p));
+    return `<div class="memorial-card" title="${pt.name} / ${ageDays}日生きた">
+      <div class="grave">🪦</div>
+      <div>${pt.emoji}</div>
+      <div class="age">${ageDays}日</div>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================= */
+/* 実績リスト                                      */
+/* ============================================= */
 function renderAchievements() {
   const list = document.getElementById('achievementsList');
-  let filtered = achievements;
-  if (currentFilter === 'active') filtered = achievements.filter(a => !a.completed);
-  else if (currentFilter === 'completed') filtered = achievements.filter(a => a.completed);
+  const src = achievements();
+  let filtered = src;
+  if (currentFilter === 'active') filtered = src.filter(a => !a.completed);
+  else if (currentFilter === 'completed') filtered = src.filter(a => a.completed);
 
   if (filtered.length === 0) {
     list.innerHTML = `<div style="text-align:center;color:#999;padding:30px;font-size:1.1em;">
@@ -1172,7 +1800,7 @@ function renderAchievements() {
       <div class="achievement-info">
         <div class="achievement-title">${a.completed ? '✅' : '⭐'} ${esc(a.title)}</div>
         <div class="achievement-desc">${esc(a.desc || '')}</div>
-        <div class="achievement-reward">${pikminSVG(a.pikminType, 22)} ${p.name} × ${a.pikminCount}匹</div>
+        <div class="achievement-reward">${pikminSVG(a.pikminType, 22)} ${p.name} 1匹 + 🍎 ${a.foodReward}</div>
       </div>
       <div class="achievement-actions">
         ${a.completed
@@ -1185,12 +1813,46 @@ function renderAchievements() {
   }).join('');
 }
 
+/* ============================================= */
+/* 進捗バー（期間フィルタ対応）                    */
+/* ============================================= */
 function renderProgress() {
-  const total = achievements.length;
-  const done = achievements.filter(a => a.completed).length;
+  const period = state.settings.progressPeriod || 'all';
+  // タブのactive切替
+  document.querySelectorAll('#periodTabs .period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+
+  const src = achievements();
+  let total, done;
+  let label = '';
+  if (period === 'all') {
+    total = src.length;
+    done = src.filter(a => a.completed).length;
+    label = '全期間';
+  } else {
+    const from =
+      period === 'today' ? startOfDayMs() :
+      period === 'week'  ? startOfWeekMs() :
+      period === 'month' ? startOfMonthMs() : 0;
+    const periodAchievements = src.filter(a => a.completedAt && a.completedAt >= from);
+    done = periodAchievements.length;
+    // 「全体の何%」ではなく「今期間に達成した数」をシンプルに表示
+    total = Math.max(done, src.filter(a => !a.completed).length + done);
+    label = period === 'today' ? '今日' : period === 'week' ? '今週' : '今月';
+  }
   const percent = total ? (done / total * 100) : 0;
   document.getElementById('progressFill').style.width = percent + '%';
-  document.getElementById('progressText').textContent = `${done} / ${total} 達成 (${percent.toFixed(0)}%)`;
+  document.getElementById('progressText').textContent =
+    period === 'all'
+      ? `${done} / ${total} 達成 (${percent.toFixed(0)}%)`
+      : `${label}: ${done}件達成`;
+}
+
+function setProgressPeriod(p) {
+  state.settings.progressPeriod = p;
+  save();
+  renderProgress();
 }
 
 function renderPikminSelector() {
@@ -1260,7 +1922,7 @@ function renderBgPikmin() {
   // 既存のbg-pikminを一度削除（雲・草・花は残す）
   layer.querySelectorAll('.bg-pikmin').forEach(el => el.remove());
 
-  const pikmin = getAllEarnedPikmin();
+  const pikmin = alivePikmin();
   if (pikmin.length === 0) return;
 
   // 背景に表示する数（モバイルは軽量化: 最大10匹 / PC: 最大20匹）
@@ -1321,7 +1983,7 @@ function setDetailFilter(f) {
 }
 
 function renderDetailFilters() {
-  const pikmin = getAllEarnedPikmin();
+  const pikmin = alivePikmin();
   const counts = {};
   pikmin.forEach(p => counts[p.type] = (counts[p.type] || 0) + 1);
 
@@ -1344,10 +2006,10 @@ function renderDetailGround() {
   const ground = document.getElementById('detailGround');
   const counter = document.getElementById('detailCounter');
 
-  let pikmin = getAllEarnedPikmin();
+  let pikmin = alivePikmin().slice();
   if (detailFilter !== 'all') pikmin = pikmin.filter(p => p.type === detailFilter);
-  // 詳細ビューも安定順にソート
-  pikmin.sort((a, b) => a.sortKey - b.sortKey);
+  // 詳細ビューも安定順にソート（id のハッシュで決定的）
+  pikmin.sort((a, b) => hashCode(a.id) - hashCode(b.id));
 
   counter.textContent = `${detailFilter === 'all' ? '合計' : PIKMIN_TYPES[detailFilter].name} ${pikmin.length}匹`;
 
@@ -1356,11 +2018,85 @@ function renderDetailGround() {
     return;
   }
 
-  ground.innerHTML = pikmin.map((p, i) =>
-    `<div class="detail-pikmin" data-pikmin-key="${esc(p.key)}" style="animation-delay: ${(i % 20) * 0.08}s" title="${PIKMIN_TYPES[p.type].name}">
-      ${pikminSVG(p.type, 80)}
-    </div>`
-  ).join('');
+  ground.innerHTML = pikmin.map((p, i) => {
+    const stg = pikminStage(p);
+    const st  = pikminState(p);
+    return `<div class="detail-pikmin ${st}" data-pikmin-id="${esc(p.id)}" style="animation-delay: ${(i % 20) * 0.08}s" title="${PIKMIN_TYPES[p.type].name}・${stageLabel(stg)}">
+      ${pikminSVG(p.type, 80, { stage: stg, state: st })}
+    </div>`;
+  }).join('');
+}
+
+/* ============================================= */
+/* ピクミン個別操作（餌・なでる・操作シート）      */
+/* ============================================= */
+function openActionSheet(id) {
+  const p = state.pikmin.find(x => x.id === id);
+  if (!p || p.diedAt) return;
+  activePikminId = id;
+  refreshActionSheet(id);
+  document.getElementById('actionSheet').classList.add('active');
+}
+
+function closeActionSheet() {
+  document.getElementById('actionSheet').classList.remove('active');
+  activePikminId = null;
+}
+
+function refreshActionSheet(id) {
+  const p = state.pikmin.find(x => x.id === id);
+  if (!p) { closeActionSheet(); return; }
+  const pt = PIKMIN_TYPES[p.type];
+  const stg = pikminStage(p);
+  const st  = pikminState(p);
+
+  document.getElementById('actionPikminSvg').innerHTML = pikminSVG(p.type, 72, { stage: stg, state: st });
+  document.getElementById('actionPikminName').textContent = `${pt.emoji} ${pt.name}`;
+  document.getElementById('actionPikminMeta').textContent =
+    `${stageLabel(stg)} ・ ${stateLabel(st)} ・ ${Math.floor(pikminAgeDays(p))}日目`;
+
+  // お腹バー（0=空腹極限、100=満腹）
+  const hungerPercent = Math.round((1 - pikminHungerRatio(p)) * 100);
+  const cls = hungerPercent >= 60 ? 'full' : hungerPercent >= 30 ? 'hungry' : 'starving';
+  document.getElementById('actionPikminBars').innerHTML = `
+    <div class="bar-row">
+      <span class="label">お腹</span>
+      <div class="bar-bg"><div class="bar-fg ${cls}" style="width:${hungerPercent}%"></div></div>
+      <span>${hungerPercent}%</span>
+    </div>`;
+
+  document.getElementById('actionFoodCount').textContent = state.resources.food;
+  const feedBtn = document.getElementById('actionFeedBtn');
+  feedBtn.disabled = state.resources.food <= 0;
+}
+
+function feedPikmin(id) {
+  const p = state.pikmin.find(x => x.id === id);
+  if (!p || p.diedAt) return;
+  if (state.resources.food <= 0) {
+    showToast('🍎 餌が足りません。実績を達成しよう！');
+    return;
+  }
+  state.resources.food--;
+  p.lastFedAt = Date.now();
+  save();
+  render();
+  if (activePikminId === id) refreshActionSheet(id);
+  showToast(`🍎 ${PIKMIN_TYPES[p.type].name}はお腹いっぱい！`);
+}
+
+function petPikmin(id) {
+  const p = state.pikmin.find(x => x.id === id);
+  if (!p || p.diedAt) return;
+  // 1時間分だけお腹を満たす（餌は消費しない優しい撫で）
+  p.lastFedAt = Math.min(Date.now(), p.lastFedAt + 60 * 60 * 1000);
+  save();
+  render();
+  // ガーデン側のピクミン要素にぴょんアニメを走らせる
+  const el = document.querySelector(`.pikmin[data-pikmin-id="${CSS.escape(id)}"]`);
+  if (el) pokePikmin(el);
+  if (activePikminId === id) refreshActionSheet(id);
+  showToast('🤚 なでなでした');
 }
 
 /* ============================================= */
@@ -1369,33 +2105,73 @@ function renderDetailGround() {
 function selectPikminType(type) { selectedType = type; renderPikminSelector(); }
 
 function toggle(id) {
-  const a = achievements.find(x => x.id === id);
+  const a = state.achievements.find(x => x.id === id);
   if (!a) return;
 
-  // 達成済み→未達成（戻す）のときは、何匹消えるかを確認
+  // 達成済み→未達成（戻す）
   if (a.completed) {
     const p = PIKMIN_TYPES[a.pikminType];
+    const linked = state.pikmin.filter(x => x.fromAchievement === id && !x.diedAt);
     customConfirm({
       title: '実績を戻しますか？',
       message: `「${a.title}」を未達成に戻します。`,
-      warning: `⚠ ${p.emoji} ${p.name} ${a.pikminCount}匹 がガーデンから消えます`,
+      warning: linked.length
+        ? `⚠ この実績でうまれた ${p.emoji} ${p.name} ${linked.length}匹 がガーデンから去ります（獲得した餌はそのまま）`
+        : '獲得した餌はそのまま残ります。',
       okText: '戻す',
       danger: true,
       onOk: () => {
+        state.pikmin = state.pikmin.filter(x => !(x.fromAchievement === id && !x.diedAt));
         a.completed = false;
+        a.completedAt = null;
         save(); render();
-        showToast(`↩ ${p.name} ${a.pikminCount}匹が去りました`);
+        showToast('↩ 実績を戻しました');
       }
     });
     return;
   }
 
-  // 未達成→達成 のときは即実行
+  // 未達成→達成
+  rolloverDailyCapsIfNeeded();
+  const r = state.resources;
+  const reward = Math.max(1, a.foodReward || 3);
+  const foodRoom = Math.max(0, DAILY_FOOD_CAP - r.todayFood);
+  const foodGained = Math.min(reward, foodRoom);
+
+  let bornOne = false;
+  if (r.todayPikmin < DAILY_PIKMIN_CAP) {
+    // 新規ピクミンが仲間に
+    state.pikmin.push({
+      id: 'p' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      type: a.pikminType,
+      bornAt: Date.now(),
+      lastFedAt: Date.now(),
+      fromAchievement: a.id,
+      diedAt: null,
+    });
+    r.todayPikmin++;
+    bornOne = true;
+  } else {
+    // 今日のピクミン上限到達 → 代わりに餌ボーナス +3（今日の餌上限内）
+    const bonus = Math.max(0, Math.min(3, DAILY_FOOD_CAP - r.todayFood - foodGained));
+    r.food += bonus;
+    r.todayFood += bonus;
+  }
+  r.food += foodGained;
+  r.todayFood += foodGained;
+
   a.completed = true;
+  a.completedAt = Date.now();
   save();
   render();
+
   const p = PIKMIN_TYPES[a.pikminType];
-  showToast(`🎉 ${p.emoji} ${p.name}を ${a.pikminCount}匹 ゲット！`);
+  const parts = [];
+  if (bornOne) parts.push(`🎉 ${p.emoji}${p.name}誕生`);
+  else parts.push('📦 今日のピクミン上限到達');
+  if (foodGained > 0) parts.push(`🍎+${foodGained}`);
+  else if (foodRoom === 0) parts.push('（餌上限到達）');
+  showToast(parts.join(' '));
   fireConfetti(p.color);
 }
 
@@ -1403,11 +2179,11 @@ function openModal(id) {
   editingId = id || null;
   document.getElementById('modalTitle').textContent = id ? '実績を編集' : '実績を追加';
   if (id) {
-    const a = achievements.find(x => x.id === id);
+    const a = state.achievements.find(x => x.id === id);
     document.getElementById('achTitle').value = a.title;
     document.getElementById('achDesc').value = a.desc || '';
     selectedType = a.pikminType;
-    document.getElementById('achCount').value = a.pikminCount;
+    document.getElementById('achCount').value = a.foodReward || 3;
   } else {
     document.getElementById('achTitle').value = '';
     document.getElementById('achDesc').value = '';
@@ -1427,7 +2203,7 @@ function closeModal() { document.getElementById('modal').classList.remove('activ
 function saveAchievement() {
   const title = document.getElementById('achTitle').value.trim();
   const desc = document.getElementById('achDesc').value.trim();
-  const count = Math.max(1, Math.min(50, parseInt(document.getElementById('achCount').value) || 1));
+  const foodReward = Math.max(1, Math.min(10, parseInt(document.getElementById('achCount').value) || 1));
 
   if (!title) {
     showToast('⚠ タイトルを入力してください');
@@ -1436,13 +2212,17 @@ function saveAchievement() {
   }
 
   if (editingId) {
-    const a = achievements.find(x => x.id === editingId);
-    a.title = title; a.desc = desc; a.pikminType = selectedType; a.pikminCount = count;
+    const a = state.achievements.find(x => x.id === editingId);
+    a.title = title; a.desc = desc; a.pikminType = selectedType; a.foodReward = foodReward;
     showToast('✎ 実績を更新しました');
   } else {
-    achievements.push({
-      id: 'a' + Date.now(), title, desc,
-      pikminType: selectedType, pikminCount: count, completed: false
+    state.achievements.push({
+      id: 'a' + Date.now(),
+      title, desc,
+      pikminType: selectedType,
+      foodReward,
+      completed: false,
+      completedAt: null,
     });
     showToast('✨ 新しい実績を追加しました！');
   }
@@ -1452,11 +2232,12 @@ function saveAchievement() {
 function edit(id) { openModal(id); }
 
 function del(id) {
-  const a = achievements.find(x => x.id === id);
+  const a = state.achievements.find(x => x.id === id);
   if (!a) return;
   const p = PIKMIN_TYPES[a.pikminType];
-  const warning = a.completed
-    ? `⚠ ${p.emoji} ${p.name} ${a.pikminCount}匹 がガーデンから消えます`
+  const linked = state.pikmin.filter(x => x.fromAchievement === id && !x.diedAt);
+  const warning = linked.length
+    ? `⚠ 紐づく ${p.emoji} ${p.name} ${linked.length}匹 がガーデンから去ります`
     : '';
   customConfirm({
     title: '実績を削除しますか？',
@@ -1465,7 +2246,8 @@ function del(id) {
     okText: '削除する',
     danger: true,
     onOk: () => {
-      achievements = achievements.filter(x => x.id !== id);
+      state.achievements = state.achievements.filter(x => x.id !== id);
+      state.pikmin = state.pikmin.filter(x => !(x.fromAchievement === id && !x.diedAt));
       save(); render();
       showToast('🗑 実績を削除しました');
     }
@@ -1481,16 +2263,19 @@ function setFilter(f) {
 }
 
 function resetAll() {
-  const total = achievements.filter(a => a.completed)
-    .reduce((sum, a) => sum + a.pikminCount, 0);
+  const aliveCount = alivePikmin().length;
+  const food = state.resources.food;
+  const warning = (aliveCount > 0 || food > 0)
+    ? `⚠ 現在のピクミン ${aliveCount}匹 と餌 ${food}個 がすべて消えます`
+    : '';
   customConfirm({
     title: 'すべてリセットしますか？',
-    message: '実績と進捗をすべて初期状態に戻します。\nこの操作は元に戻せません。',
-    warning: total > 0 ? `⚠ 現在のピクミン ${total}匹 がすべて消えます` : '',
+    message: '実績・ピクミン・餌・進捗をすべて初期状態に戻します。\nこの操作は元に戻せません。',
+    warning,
     okText: 'リセット',
     danger: true,
     onOk: () => {
-      achievements = JSON.parse(JSON.stringify(DEFAULT_ACHIEVEMENTS));
+      state = makeFreshState();
       save(); render();
       showToast('🔄 リセットしました');
     }
@@ -1589,9 +2374,17 @@ function pokePikmin(el) {
 /* イベント委譲（全クリックをここで捌く）           */
 /* ============================================= */
 document.addEventListener('click', e => {
-  // ピクミンをクリック（ぴょん！リアクション）
-  const pkm = e.target.closest('.pikmin, .detail-pikmin');
-  if (pkm) { pokePikmin(pkm); return; }
+  // ガーデンのピクミンをタップ → 操作シートを開く（ぴょん！リアクション付き）
+  const gardenPkm = e.target.closest('.pikmin');
+  if (gardenPkm) {
+    pokePikmin(gardenPkm);
+    const pid = gardenPkm.dataset.pikminId;
+    if (pid) openActionSheet(pid);
+    return;
+  }
+  // 詳細ビューのピクミンは単なるリアクションのみ
+  const detailPkm = e.target.closest('.detail-pikmin');
+  if (detailPkm) { pokePikmin(detailPkm); return; }
 
   // data-action を持つ要素を探す
   const el = e.target.closest('[data-action]');
@@ -1600,6 +2393,7 @@ document.addEventListener('click', e => {
   const id = el.dataset.id;
   const filter = el.dataset.filter;
   const type = el.dataset.type;
+  const period = el.dataset.period;
 
   switch (action) {
     // 上部ボタン類
@@ -1616,11 +2410,17 @@ document.addEventListener('click', e => {
     // フィルター
     case 'filter':            setFilter(filter); break;
     case 'detail-filter':     setDetailFilter(filter); break;
+    case 'period':            setProgressPeriod(period); break;
 
     // 実績追加/編集モーダル
     case 'close-modal':       closeModal(); break;
     case 'save-achievement':  saveAchievement(); break;
     case 'select-pikmin':     selectPikminType(type); break;
+
+    // ピクミン操作シート
+    case 'feed-pikmin':       if (activePikminId) feedPikmin(activePikminId); break;
+    case 'pet-pikmin':        if (activePikminId) petPikmin(activePikminId); break;
+    case 'close-action-sheet':closeActionSheet(); break;
 
     // カスタム確認モーダル
     case 'confirm-ok':        closeConfirmModal(true); break;
@@ -1635,16 +2435,30 @@ document.getElementById('modal').addEventListener('click', e => {
 document.getElementById('confirmModal').addEventListener('click', e => {
   if (e.target.id === 'confirmModal') closeConfirmModal(false);
 });
+document.getElementById('actionSheet').addEventListener('click', e => {
+  if (e.target.id === 'actionSheet') closeActionSheet();
+});
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeConfirmModal(false);
     closeModal();
     closeDetailModal();
+    closeActionSheet();
   } else if (e.key === 'Enter' && document.getElementById('confirmModal').classList.contains('active')) {
     // 確認モーダルが開いているとき、Enterで確定
     e.preventDefault();
     closeConfirmModal(true);
+  }
+});
+
+// タブが再表示されたときに状態を再計算（バックグラウンド復帰で空腹・死亡を反映）
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    rolloverDailyCapsIfNeeded();
+    tick();
+    render();
+    if (activePikminId) refreshActionSheet(activePikminId);
   }
 });
 
