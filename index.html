@@ -993,8 +993,71 @@ button:focus-visible,
   font-size: 0.8em;
   color: #455A64;
 }
+.memorial-card { position: relative; transition: opacity 0.3s; }
+.memorial-card.fading { opacity: 0.45; }
 .memorial-card .grave { font-size: 2em; line-height: 1; }
 .memorial-card .age { font-weight: bold; color: #37474F; margin-top: 4px; }
+
+.memorial-bury {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: #78909C;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  padding: 0; line-height: 1;
+  transition: transform 0.15s, background 0.15s;
+}
+.memorial-bury:hover { background: #546E7A; transform: scale(1.15); }
+
+.memorial-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.memorial-bury-all {
+  background: #B0BEC5;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 14px;
+  font-size: 0.78em;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+}
+.memorial-bury-all:hover { background: #78909C; }
+
+/* フッターのツール（エクスポート/インポート） */
+.footer-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.btn-export, .btn-import {
+  color: white;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 20px;
+  font-size: 0.88em;
+  font-weight: bold;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  transition: transform 0.15s, filter 0.15s;
+}
+.btn-export { background: #42A5F5; }
+.btn-import { background: #66BB6A; }
+.btn-export:hover, .btn-import:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 /* ピクミン操作シート（ボトムシート風） */
 .action-sheet {
@@ -1447,7 +1510,10 @@ button:focus-visible,
   </section>
 
   <section class="achievements memorial" id="memorialSection" hidden>
-    <h2 class="section-title">🪦 見送ったピクミン</h2>
+    <div class="memorial-header">
+      <h2 class="section-title">🪦 見送ったピクミン</h2>
+      <button class="memorial-bury-all" id="buryAllBtn" data-action="bury-all">🙏 すべて供養</button>
+    </div>
     <div class="memorial-grid" id="memorialGrid"></div>
   </section>
 
@@ -1465,6 +1531,10 @@ button:focus-visible,
   </section>
 
   <div class="footer">
+    <div class="footer-tools">
+      <button class="btn-export" data-action="export-data">💾 エクスポート</button>
+      <button class="btn-import" data-action="import-data">📥 インポート</button>
+    </div>
     <button class="btn-reset" data-action="reset-all">🔄 すべてリセット</button>
   </div>
 </div>
@@ -1658,16 +1728,27 @@ const achievements = () => state.achievements;
 /* ============================================= */
 /* 日付ユーティリティ                              */
 /* ============================================= */
+// 1日の区切り時刻（4時までは前日扱い）
+const DAY_ROLLOVER_HOUR = 4;
+const COMPLETION_COOLDOWN_MS = 30 * 60 * 1000; // 再達成の最短間隔：30分
+const MEMORIAL_FADE_DAYS = 30; // 30日以上経った墓は薄く表示
+
 function todayKey() {
   const d = new Date();
+  if (d.getHours() < DAY_ROLLOVER_HOUR) d.setDate(d.getDate() - 1);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-function startOfDayMs()   { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); }
-function startOfWeekMs()  { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime(); }
-function startOfMonthMs() { const d = new Date(); d.setHours(0,0,0,0); d.setDate(1); return d.getTime(); }
+function startOfDayMs() {
+  const d = new Date();
+  if (d.getHours() < DAY_ROLLOVER_HOUR) d.setDate(d.getDate() - 1);
+  d.setHours(DAY_ROLLOVER_HOUR, 0, 0, 0);
+  return d.getTime();
+}
+function startOfWeekMs()  { const d = new Date(startOfDayMs()); d.setDate(d.getDate() - d.getDay()); return d.getTime(); }
+function startOfMonthMs() { const d = new Date(startOfDayMs()); d.setDate(1); return d.getTime(); }
 
 /* ============================================= */
 /* 保存・ロード・マイグレーション                  */
@@ -2534,18 +2615,23 @@ function renderMemorial() {
   const dead = deadPikmin();
   const sec = document.getElementById('memorialSection');
   const grid = document.getElementById('memorialGrid');
+  const buryAllBtn = document.getElementById('buryAllBtn');
   if (dead.length === 0) { sec.hidden = true; return; }
   sec.hidden = false;
+  if (buryAllBtn) buryAllBtn.textContent = '🙏 すべて供養 (' + dead.length + ')';
   // 新しい死亡順
   dead.sort((a, b) => b.diedAt - a.diedAt);
   grid.innerHTML = dead.map(p => {
     const pt = PIKMIN_TYPES[p.type];
     const ageDays = Math.floor(pikminAgeDays(p));
-    return `<div class="memorial-card" title="${pt.name} / ${ageDays}日生きた">
-      <div class="grave">🪦</div>
-      <div>${pt.emoji}</div>
-      <div class="age">${ageDays}日</div>
-    </div>`;
+    const sinceDeath = (Date.now() - p.diedAt) / DAY_MS;
+    const fade = sinceDeath > MEMORIAL_FADE_DAYS ? ' fading' : '';
+    return '<div class="memorial-card' + fade + '" title="' + esc(pt.name) + ' / ' + ageDays + '日生きた">' +
+      '<button class="memorial-bury" data-action="bury-pikmin" data-id="' + esc(p.id) + '" title="🙏 土に還す">✕</button>' +
+      '<div class="grave">🪦</div>' +
+      '<div>' + pt.emoji + '</div>' +
+      '<div class="age">' + ageDays + '日</div>' +
+    '</div>';
   }).join('');
 }
 
@@ -3095,6 +3181,16 @@ function toggle(id) {
 
   // 未達成→達成
   rolloverDailyCapsIfNeeded();
+
+  // クールダウン：30分以内の再達成は無効（ヒートマップ汚染防止）
+  const log = a.completionLog || [];
+  const lastDone = log.length > 0 ? log[log.length - 1] : 0;
+  if (lastDone && Date.now() - lastDone < COMPLETION_COOLDOWN_MS) {
+    const mins = Math.ceil((COMPLETION_COOLDOWN_MS - (Date.now() - lastDone)) / 60000);
+    showToast('⏳ さっき達成したばかり（あと' + mins + '分で再挑戦可能）');
+    return;
+  }
+
   const r = state.resources;
   const reward = Math.max(1, a.foodReward || 3);
   const foodRoom = Math.max(0, DAILY_FOOD_CAP - r.todayFood);
@@ -3233,6 +3329,107 @@ function setFilter(f) {
     b.classList.toggle('active', b.dataset.filter === f);
   });
   renderAchievements();
+}
+
+function buryPikmin(id) {
+  const p = state.pikmin.find(x => x.id === id);
+  if (!p || !p.diedAt) return;
+  const pt = PIKMIN_TYPES[p.type];
+  customConfirm({
+    title: '土に還しますか？',
+    message: `${pt.emoji} ${pt.name} をお墓から送り出します。`,
+    warning: '履歴は残りません。',
+    okText: '🙏 供養する',
+    danger: false,
+    onOk: () => {
+      state.pikmin = state.pikmin.filter(x => x.id !== id);
+      save(); render();
+      showToast('🙏 ありがとうを伝えた');
+    }
+  });
+}
+
+function buryAllDead() {
+  const n = deadPikmin().length;
+  if (n === 0) return;
+  customConfirm({
+    title: 'すべて土に還しますか？',
+    message: `お墓にいる ${n}匹 すべてを送り出します。`,
+    warning: '履歴は残りません。',
+    okText: 'すべて供養する',
+    danger: true,
+    onOk: () => {
+      state.pikmin = state.pikmin.filter(p => !p.diedAt);
+      save(); render();
+      showToast('🙏 ' + n + '匹にありがとうを伝えた');
+    }
+  });
+}
+
+function exportData() {
+  try {
+    const payload = { __pikminGardenExport: true, version: 2, exportedAt: Date.now(), data: state };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pikmin-garden-' + todayKey() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+    showToast('💾 エクスポートしました');
+  } catch(e) {
+    console.warn('export失敗:', e);
+    showToast('⚠ エクスポートに失敗しました');
+  }
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.style.display = 'none';
+  input.onchange = function(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      let parsed;
+      try {
+        parsed = JSON.parse(ev.target.result);
+      } catch(err) {
+        showToast('⚠ ファイル形式が不正です');
+        return;
+      }
+      // ラッパー形式（__pikminGardenExport）と生の state 両方に対応
+      const candidate = (parsed && parsed.__pikminGardenExport && parsed.data) ? parsed.data : parsed;
+      if (!candidate || typeof candidate !== 'object' || !Array.isArray(candidate.achievements)) {
+        showToast('⚠ ピクミンガーデンのデータではありません');
+        return;
+      }
+      customConfirm({
+        title: 'インポートしますか？',
+        message: '現在のデータは上書きされます。',
+        warning: '事前に「エクスポート」しておくと安心です。',
+        okText: 'インポート',
+        danger: true,
+        onOk: () => {
+          try {
+            state = normalizeState(candidate);
+            save(); render();
+            showToast('📥 インポートしました');
+          } catch(err) {
+            showToast('⚠ インポート処理に失敗しました');
+          }
+        }
+      });
+    };
+    reader.readAsText(file);
+  };
+  document.body.appendChild(input);
+  input.click();
+  setTimeout(() => input.remove(), 1000);
 }
 
 function resetAll() {
@@ -3374,6 +3571,10 @@ document.addEventListener('click', e => {
     case 'close-detail':      closeDetailModal(); break;
     case 'open-add':          openModal(); break;
     case 'reset-all':         resetAll(); break;
+    case 'export-data':       exportData(); break;
+    case 'import-data':       importData(); break;
+    case 'bury-pikmin':       if (id) buryPikmin(id); break;
+    case 'bury-all':          buryAllDead(); break;
 
     // 実績カード
     case 'toggle':            toggle(id); break;
@@ -3439,6 +3640,21 @@ document.addEventListener('keydown', e => {
     // 確認モーダルが開いているとき、Enterで確定
     e.preventDefault();
     closeConfirmModal(true);
+  }
+});
+
+// 別タブでの変更を検知して自動反映（データ消失防止）
+window.addEventListener('storage', function(e) {
+  if (e.key === STORAGE_KEY && e.newValue) {
+    try {
+      const newState = normalizeState(JSON.parse(e.newValue));
+      state = newState;
+      render();
+      if (activePikminId) refreshActionSheet(activePikminId);
+      showToast('🔄 別タブの変更を取り込みました');
+    } catch(err) {
+      console.warn('storage同期失敗:', err);
+    }
   }
 });
 
